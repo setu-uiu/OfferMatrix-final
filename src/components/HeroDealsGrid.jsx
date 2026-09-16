@@ -19,15 +19,15 @@ export default function HeroDealsGrid({
             <div className="badge-pill-header">
               <span style={{ color: '#ff4757' }}>🔥</span> Best Food Deal
             </div>
-            <button 
+            <button
               className="btn-card-heart"
               onClick={() => toggleSaveDeal(bestFoodDeal)}
               title="Save deal"
             >
-              <Heart 
-                size={18} 
-                fill={savedDeals.some(d => d.id === bestFoodDeal.id) ? "#ff4757" : "none"} 
-                color="#ff4757" 
+              <Heart
+                size={18}
+                fill={savedDeals.some(d => d.id === bestFoodDeal.id) ? "#ff4757" : "none"}
+                color="#ff4757"
               />
             </button>
           </div>
@@ -69,7 +69,7 @@ export default function HeroDealsGrid({
           </div>
 
           {/* Best Deal CTA Button */}
-          <button 
+          <button
             className="btn-card-action"
             onClick={() => onOpenDealDetail(bestFoodDeal)}
           >
@@ -92,14 +92,14 @@ export default function HeroDealsGrid({
             <div className="badge-pill-header">
               <span>🚗</span> Cheapest Ride
             </div>
-            <button 
+            <button
               className="btn-card-heart"
               onClick={() => toggleSaveDeal(cheapestRide)}
             >
-              <Heart 
-                size={18} 
-                fill={savedDeals.some(d => d.id === cheapestRide.id) ? "#ff4757" : "none"} 
-                color="#ff4757" 
+              <Heart
+                size={18}
+                fill={savedDeals.some(d => d.id === cheapestRide.id) ? "#ff4757" : "none"}
+                color="#ff4757"
               />
             </button>
           </div>
@@ -145,14 +145,14 @@ export default function HeroDealsGrid({
             <div className="badge-pill-header">
               <span>✨</span> Skin Care Deal
             </div>
-            <button 
+            <button
               className="btn-card-heart"
               onClick={() => toggleSaveDeal(skincareDeal)}
             >
-              <Heart 
-                size={18} 
-                fill={savedDeals.some(d => d.id === skincareDeal.id) ? "#ff4757" : "none"} 
-                color="#ff4757" 
+              <Heart
+                size={18}
+                fill={savedDeals.some(d => d.id === skincareDeal.id) ? "#ff4757" : "none"}
+                color="#ff4757"
               />
             </button>
           </div>

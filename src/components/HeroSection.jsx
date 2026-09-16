@@ -43,7 +43,7 @@ export default function HeroSection({
 
         return (
           <div className="category-quick-bar">
-            <div 
+            <div
               className={`cat-card ${selectedCategory === 'food' ? 'active' : ''}`}
               onClick={() => handleQuickCatClick('food')}
             >
@@ -51,7 +51,7 @@ export default function HeroSection({
               <span className="cat-name">Food</span>
             </div>
 
-            <div 
+            <div
               className={`cat-card ${selectedCategory === 'rides' ? 'active' : ''}`}
               onClick={() => handleQuickCatClick('rides')}
             >
@@ -59,7 +59,7 @@ export default function HeroSection({
               <span className="cat-name">Rides</span>
             </div>
 
-            <div 
+            <div
               className={`cat-card ${selectedCategory === 'skincare' ? 'active' : ''}`}
               onClick={() => handleQuickCatClick('skincare')}
             >
@@ -67,7 +67,7 @@ export default function HeroSection({
               <span className="cat-name">Skin Care</span>
             </div>
 
-            <div 
+            <div
               className={`cat-card ${selectedCategory === 'coupons' ? 'active' : ''}`}
               onClick={() => handleQuickCatClick('coupons')}
             >
@@ -103,7 +103,7 @@ export default function HeroSection({
           ))}
         </select>
 
-        <button className="btn-search" onClick={() => {}}>
+        <button className="btn-search" onClick={() => { }}>
           Search
         </button>
       </div>
@@ -139,7 +139,7 @@ export default function HeroSection({
           </div>
         </div>
 
-        <button 
+        <button
           className="btn-copy-code"
           onClick={() => onCopyCode('SAVE10')}
         >
@@ -154,6 +154,23 @@ export default function HeroSection({
             </>
           )}
         </button>
+      </div>
+
+      <div className="hero-trust-row" aria-label="OfferMatrix platform highlights">
+        <div className="trust-stat">
+          <strong>12k+</strong>
+          <span>offers tracked</span>
+        </div>
+        <div className="trust-divider"></div>
+        <div className="trust-stat">
+          <strong>48</strong>
+          <span>partner stores</span>
+        </div>
+        <div className="trust-divider"></div>
+        <div className="trust-stat">
+          <strong>4.9/5</strong>
+          <span>shopper rating</span>
+        </div>
       </div>
     </div>
   );
