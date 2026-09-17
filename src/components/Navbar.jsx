@@ -64,8 +64,14 @@ export default function Navbar({
           <li className="nav-item">More ▾</li>
         </ul>
 
-        {/* Nav Right Actions */}
+        {/* Nav Right Actions matching screenshot */}
         <div className="nav-actions">
+          <button className="btn-saved-nav" onClick={onOpenSaved} title="Saved Deals">
+            <Heart size={16} color="#ff2b70" />
+            <span>Saved Deals</span>
+            {savedCount > 0 && <span className="saved-badge-count">{savedCount}</span>}
+          </button>
+
           <button className="btn-icon-bell" title="Notifications">
             <Bell size={18} />
             <span className="notification-dot"></span>
@@ -95,7 +101,7 @@ export default function Navbar({
             </button>
           )}
 
-          <button className="btn-find-deal" onClick={onOpenFindDeal}>
+          <button className="btn-find-deal pink-btn" onClick={onOpenFindDeal}>
             Find Best Deal
           </button>
         </div>

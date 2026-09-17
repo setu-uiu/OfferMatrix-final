@@ -17,7 +17,7 @@ const MOCK_USERS_DATA = [
     joined: '12 Aug 2026',
     status: 'Active',
     complaints: 2,
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
     details: {
       complaintsCount: 2,
       reviewsCount: 5,
@@ -31,7 +31,7 @@ const MOCK_USERS_DATA = [
         { title: 'Logged in from Dhaka, BD', date: 'Today, 10:24 AM', color: '#10b981' },
         { title: 'Used an offer (foodpanda)', date: '14 Sep 2026, 02:15 PM', color: '#10b981' },
         { title: 'Submitted a complaint', date: '12 Sep 2026, 11:30 AM', color: '#ef4444' },
-        { title: 'Account created', date: '12 Aug 2026, 09:10 PM', color: '#94a3b8' }
+        { title: 'Account created', date: '12 Aug 2026, 09:10 PM', color: '#3b82f6' }
       ]
     }
   },
@@ -43,7 +43,19 @@ const MOCK_USERS_DATA = [
     joined: '10 Aug 2026',
     status: 'Active',
     complaints: 0,
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80'
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    details: {
+      complaintsCount: 0,
+      reviewsCount: 8,
+      offersUsed: 19,
+      savedDeals: 6,
+      recentComplaints: [],
+      recentActivity: [
+        { title: 'Logged in from Chittagong, BD', date: 'Today, 09:15 AM', color: '#10b981' },
+        { title: 'Used an offer (Uber)', date: '15 Sep 2026, 06:20 PM', color: '#10b981' },
+        { title: 'Account created', date: '10 Aug 2026, 02:30 PM', color: '#3b82f6' }
+      ]
+    }
   },
   {
     id: 3,
@@ -53,7 +65,21 @@ const MOCK_USERS_DATA = [
     joined: '09 Aug 2026',
     status: 'Reported',
     complaints: 5,
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+    details: {
+      complaintsCount: 5,
+      reviewsCount: 2,
+      offersUsed: 4,
+      savedDeals: 1,
+      recentComplaints: [
+        { title: 'Payment failed twice on bKash', sub: '(Wallet)', date: '10 Sep 2026' },
+        { title: 'Expired coupon code', sub: '(General)', date: '08 Sep 2026' }
+      ],
+      recentActivity: [
+        { title: 'Reported for multiple failed claims', date: 'Yesterday, 04:10 PM', color: '#f59e0b' },
+        { title: 'Logged in from Sylhet, BD', date: '11 Sep 2026, 11:00 AM', color: '#10b981' }
+      ]
+    }
   },
   {
     id: 4,
@@ -63,7 +89,19 @@ const MOCK_USERS_DATA = [
     joined: '05 Aug 2026',
     status: 'Suspended',
     complaints: 8,
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80'
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    details: {
+      complaintsCount: 8,
+      reviewsCount: 0,
+      offersUsed: 2,
+      savedDeals: 0,
+      recentComplaints: [
+        { title: 'Abusive language in live chat', sub: '(Support)', date: '04 Sep 2026' }
+      ],
+      recentActivity: [
+        { title: 'Account suspended by Admin', date: '05 Sep 2026, 03:00 PM', color: '#ef4444' }
+      ]
+    }
   },
   {
     id: 5,
@@ -73,7 +111,125 @@ const MOCK_USERS_DATA = [
     joined: '03 Aug 2026',
     status: 'Active',
     complaints: 1,
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&q=80'
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
+    details: {
+      complaintsCount: 1,
+      reviewsCount: 12,
+      offersUsed: 24,
+      savedDeals: 9,
+      recentComplaints: [
+        { title: 'Delayed food delivery', sub: '(Pathao)', date: '01 Sep 2026' }
+      ],
+      recentActivity: [
+        { title: 'Logged in from Dhaka, BD', date: 'Today, 08:30 AM', color: '#10b981' }
+      ]
+    }
+  },
+  {
+    id: 6,
+    name: 'Sifat Mahmud',
+    email: 'sifat@gmail.com',
+    phone: '01890-765432',
+    joined: '01 Aug 2026',
+    status: 'Active',
+    complaints: 0,
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80',
+    details: {
+      complaintsCount: 0,
+      reviewsCount: 6,
+      offersUsed: 15,
+      savedDeals: 5,
+      recentComplaints: [],
+      recentActivity: [
+        { title: 'Logged in from Rajshahi, BD', date: 'Today, 11:15 AM', color: '#10b981' }
+      ]
+    }
+  },
+  {
+    id: 7,
+    name: 'Afia Rahman',
+    email: 'afia@gmail.com',
+    phone: '01755-667788',
+    joined: '28 Jul 2026',
+    status: 'Active',
+    complaints: 3,
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80',
+    details: {
+      complaintsCount: 3,
+      reviewsCount: 4,
+      offersUsed: 10,
+      savedDeals: 2,
+      recentComplaints: [
+        { title: 'CeraVe cleanser QR code check', sub: '(Skincare)', date: '25 Aug 2026' }
+      ],
+      recentActivity: [
+        { title: 'Logged in from Dhaka, BD', date: 'Yesterday, 02:20 PM', color: '#10b981' }
+      ]
+    }
+  },
+  {
+    id: 8,
+    name: 'Tahia Khan',
+    email: 'tahia@gmail.com',
+    phone: '01844-998877',
+    joined: '25 Jul 2026',
+    status: 'Reported',
+    complaints: 4,
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80',
+    details: {
+      complaintsCount: 4,
+      reviewsCount: 1,
+      offersUsed: 3,
+      savedDeals: 1,
+      recentComplaints: [
+        { title: 'Merchant refused deal discount', sub: '(Food)', date: '20 Aug 2026' }
+      ],
+      recentActivity: [
+        { title: 'Reported by Merchant Kacchi Bhai', date: '21 Aug 2026, 05:00 PM', color: '#f59e0b' }
+      ]
+    }
+  },
+  {
+    id: 9,
+    name: 'Zarin Chowdhury',
+    email: 'zarin@gmail.com',
+    phone: '01611-223344',
+    joined: '20 Jul 2026',
+    status: 'Active',
+    complaints: 0,
+    avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=150&q=80',
+    details: {
+      complaintsCount: 0,
+      reviewsCount: 9,
+      offersUsed: 21,
+      savedDeals: 7,
+      recentComplaints: [],
+      recentActivity: [
+        { title: 'Logged in from Khulna, BD', date: 'Yesterday, 10:00 AM', color: '#10b981' }
+      ]
+    }
+  },
+  {
+    id: 10,
+    name: 'Fahim Hossain',
+    email: 'fahim@gmail.com',
+    phone: '01933-556677',
+    joined: '18 Jul 2026',
+    status: 'Suspended',
+    complaints: 6,
+    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&q=80',
+    details: {
+      complaintsCount: 6,
+      reviewsCount: 0,
+      offersUsed: 1,
+      savedDeals: 0,
+      recentComplaints: [
+        { title: 'Fraudulent refund claim', sub: '(Wallet)', date: '15 Jul 2026' }
+      ],
+      recentActivity: [
+        { title: 'Account suspended by Admin', date: '18 Jul 2026, 12:00 PM', color: '#ef4444' }
+      ]
+    }
   }
 ];
 
@@ -116,6 +272,59 @@ export default function AdminDashboard({
   const [showUserDetails, setShowUserDetails] = useState(true);
   const [usersList, setUsersList] = useState(MOCK_USERS_DATA);
   const [selectedCheckboxes, setSelectedCheckboxes] = useState([]);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPhone, setNewUserPhone] = useState('');
+  const [newUserStatus, setNewUserStatus] = useState('Active');
+  const [isSendMessageModalOpen, setIsSendMessageModalOpen] = useState(false);
+  const [userMessageContent, setUserMessageContent] = useState('');
+
+  const handleAddNewUserSubmit = (e) => {
+    e.preventDefault();
+    if (!newUserName.trim() || !newUserEmail.trim()) {
+      onToast('Please enter user name and email');
+      return;
+    }
+    const newUserObj = {
+      id: Date.now(),
+      name: newUserName,
+      email: newUserEmail,
+      phone: newUserPhone || '01700-000000',
+      joined: '17 Sep 2026',
+      status: newUserStatus,
+      complaints: 0,
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+      details: {
+        complaintsCount: 0,
+        reviewsCount: 0,
+        offersUsed: 0,
+        savedDeals: 0,
+        recentComplaints: [],
+        recentActivity: [
+          { title: 'Account created by Admin', date: 'Just now', color: '#3b82f6' }
+        ]
+      }
+    };
+    setUsersList([newUserObj, ...usersList]);
+    setSelectedUser(newUserObj);
+    setIsAddUserModalOpen(false);
+    setNewUserName('');
+    setNewUserEmail('');
+    setNewUserPhone('');
+    onToast(`Added user ${newUserName} successfully! 🎉`);
+  };
+
+  const handleSendMessageSubmit = (e) => {
+    e.preventDefault();
+    if (!userMessageContent.trim()) {
+      onToast('Please enter a message to send');
+      return;
+    }
+    onToast(`Message sent to ${selectedUser?.name || 'User'}! 📩`);
+    setIsSendMessageModalOpen(false);
+    setUserMessageContent('');
+  };
 
   // Account Type Toggles for standard & premium user vs merchant pages
   const [complaintsAccountType, setComplaintsAccountType] = useState('user');
@@ -931,9 +1140,601 @@ export default function AdminDashboard({
         <main className="admin-main-content">
 
           {/* =========================================================
-             1. RIDE PLATFORMS PAGE (PIXEL PERFECT MATCH WITH SCREENSHOT)
+             0. USERS MANAGEMENT PAGE (PIXEL PERFECT MATCH WITH SCREENSHOT 2)
              ========================================================= */}
-          {activeTab === 'ride' ? (
+          {activeTab === 'users' ? (
+            <div className="users-management-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px', color: '#ffffff' }}>
+              
+              {/* Header Title & Add New User Button */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>
+                    Dashboard &gt; <span style={{ color: '#38bdf8', fontWeight: 600 }}>Users</span>
+                  </div>
+                  <h1 style={{ fontSize: '24px', fontWeight: 700, margin: 0, color: '#ffffff', letterSpacing: '-0.5px' }}>
+                    Users Management
+                  </h1>
+                  <p style={{ fontSize: '13px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                    View, manage and take action on all users. Keep the community safe and trusted.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsAddUserModalOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    backgroundColor: '#0284c7',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '10px 18px',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)'
+                  }}
+                >
+                  <Plus size={16} />
+                  <span>Add New User</span>
+                </button>
+              </div>
+
+              {/* 4 Metric KPI Cards Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                {/* Total Users */}
+                <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '46px', height: '46px', borderRadius: '12px', backgroundColor: '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Users size={22} color="#ffffff" />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Total Users</span>
+                    <h3 style={{ fontSize: '22px', fontWeight: 700, margin: '2px 0 0 0', color: '#ffffff' }}>12,480</h3>
+                    <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>↑ 12% vs last month</span>
+                  </div>
+                </div>
+
+                {/* Active Users */}
+                <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '46px', height: '46px', borderRadius: '12px', backgroundColor: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Store size={22} color="#ffffff" />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Active Users</span>
+                    <h3 style={{ fontSize: '22px', fontWeight: 700, margin: '2px 0 0 0', color: '#ffffff' }}>11,210</h3>
+                    <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>↑ 10% vs last month</span>
+                  </div>
+                </div>
+
+                {/* Suspended Users */}
+                <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '46px', height: '46px', borderRadius: '12px', backgroundColor: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <UserX size={22} color="#ffffff" />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Suspended Users</span>
+                    <h3 style={{ fontSize: '22px', fontWeight: 700, margin: '2px 0 0 0', color: '#ffffff' }}>320</h3>
+                    <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>↑ 5% vs last month</span>
+                  </div>
+                </div>
+
+                {/* Reported Users */}
+                <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '46px', height: '46px', borderRadius: '12px', backgroundColor: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <AlertTriangle size={22} color="#ffffff" />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Reported Users</span>
+                    <h3 style={{ fontSize: '22px', fontWeight: 700, margin: '2px 0 0 0', color: '#ffffff' }}>156</h3>
+                    <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>↑ 18% vs last month</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Content Split: Left Table & Right User Details Panel */}
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+
+                {/* Left Side: Table & Filters */}
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                  {/* Filter Bar */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                    
+                    {/* Status Tabs */}
+                    <div style={{ display: 'flex', gap: '4px', backgroundColor: '#0f172a', padding: '4px', borderRadius: '8px', border: '1px solid #1e293b' }}>
+                      <button
+                        onClick={() => setUserFilterTab('all')}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer',
+                          backgroundColor: userFilterTab === 'all' ? '#0284c7' : 'transparent',
+                          color: userFilterTab === 'all' ? '#ffffff' : '#94a3b8'
+                        }}
+                      >
+                        All Users (12,480)
+                      </button>
+                      <button
+                        onClick={() => setUserFilterTab('active')}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer',
+                          backgroundColor: userFilterTab === 'active' ? '#0284c7' : 'transparent',
+                          color: userFilterTab === 'active' ? '#ffffff' : '#94a3b8'
+                        }}
+                      >
+                        Active (11,210)
+                      </button>
+                      <button
+                        onClick={() => setUserFilterTab('suspended')}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer',
+                          backgroundColor: userFilterTab === 'suspended' ? '#0284c7' : 'transparent',
+                          color: userFilterTab === 'suspended' ? '#ffffff' : '#94a3b8'
+                        }}
+                      >
+                        Suspended (320)
+                      </button>
+                      <button
+                        onClick={() => setUserFilterTab('reported')}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer',
+                          backgroundColor: userFilterTab === 'reported' ? '#0284c7' : 'transparent',
+                          color: userFilterTab === 'reported' ? '#ffffff' : '#94a3b8'
+                        }}
+                      >
+                        Reported (156)
+                      </button>
+                    </div>
+
+                    {/* Right Controls: Filter button & Search Bar */}
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <button
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          backgroundColor: '#0f172a',
+                          border: '1px solid #1e293b',
+                          color: '#e2e8f0',
+                          padding: '8px 14px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Filter size={14} />
+                        <span>Filter</span>
+                      </button>
+
+                      <div style={{ position: 'relative' }}>
+                        <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                        <input
+                          type="text"
+                          placeholder="Search user by name, email, phone..."
+                          value={userSearchText}
+                          onChange={(e) => setUserSearchText(e.target.value)}
+                          style={{
+                            backgroundColor: '#0f172a',
+                            border: '1px solid #1e293b',
+                            borderRadius: '8px',
+                            padding: '8px 12px 8px 34px',
+                            color: '#ffffff',
+                            fontSize: '12px',
+                            width: '260px',
+                            outline: 'none'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Users Table */}
+                  <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid #1e293b', color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          <th style={{ padding: '12px 14px', width: '36px', textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedCheckboxes.length === usersList.filter(u => userFilterTab === 'all' ? true : userFilterTab === 'active' ? u.status === 'Active' : userFilterTab === 'suspended' ? u.status === 'Suspended' : u.status === 'Reported').length && usersList.length > 0}
+                              onChange={(e) => {
+                                const currentFiltered = usersList.filter(u => userFilterTab === 'all' ? true : userFilterTab === 'active' ? u.status === 'Active' : userFilterTab === 'suspended' ? u.status === 'Suspended' : u.status === 'Reported');
+                                if (e.target.checked) {
+                                  setSelectedCheckboxes(currentFiltered.map(u => u.id));
+                                } else {
+                                  setSelectedCheckboxes([]);
+                                }
+                              }}
+                            />
+                          </th>
+                          <th style={{ padding: '12px 14px', width: '36px', color: '#64748b' }}>#</th>
+                          <th style={{ padding: '12px 14px' }}>User</th>
+                          <th style={{ padding: '12px 14px' }}>Contact</th>
+                          <th style={{ padding: '12px 14px' }}>Joined Date</th>
+                          <th style={{ padding: '12px 14px' }}>Status</th>
+                          <th style={{ padding: '12px 14px' }}>Complaints</th>
+                          <th style={{ padding: '12px 14px', textAlign: 'center' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {usersList
+                          .filter(u => {
+                            const matchesTab = userFilterTab === 'all' ? true :
+                              userFilterTab === 'active' ? u.status === 'Active' :
+                              userFilterTab === 'suspended' ? u.status === 'Suspended' :
+                              userFilterTab === 'reported' ? u.status === 'Reported' : true;
+                            const matchesSearch = u.name.toLowerCase().includes(userSearchText.toLowerCase()) ||
+                              u.email.toLowerCase().includes(userSearchText.toLowerCase()) ||
+                              u.phone.toLowerCase().includes(userSearchText.toLowerCase());
+                            return matchesTab && matchesSearch;
+                          })
+                          .map((user, idx) => {
+                            const isSelected = selectedUser?.id === user.id;
+                            return (
+                              <tr
+                                key={user.id}
+                                onClick={() => { setSelectedUser(user); setShowUserDetails(true); }}
+                                style={{
+                                  borderBottom: '1px solid #1e293b',
+                                  backgroundColor: isSelected ? 'rgba(2, 132, 199, 0.1)' : 'transparent',
+                                  cursor: 'pointer',
+                                  transition: 'background-color 0.15s ease'
+                                }}
+                              >
+                                <td style={{ padding: '12px 14px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedCheckboxes.includes(user.id)}
+                                    onChange={() => handleToggleCheckbox(user.id)}
+                                  />
+                                </td>
+                                <td style={{ padding: '12px 14px', color: '#64748b', fontSize: '12px' }}>{idx + 1}</td>
+                                <td style={{ padding: '12px 14px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <img
+                                      src={user.avatar}
+                                      alt={user.name}
+                                      style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #334155' }}
+                                    />
+                                    <div>
+                                      <div style={{ fontWeight: 600, color: '#ffffff', fontSize: '13px' }}>{user.name}</div>
+                                      <div style={{ fontSize: '11px', color: '#64748b' }}>{user.email}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td style={{ padding: '12px 14px', color: '#cbd5e1', fontSize: '12px' }}>{user.phone}</td>
+                                <td style={{ padding: '12px 14px', color: '#cbd5e1', fontSize: '12px' }}>{user.joined}</td>
+                                <td style={{ padding: '12px 14px' }}>
+                                  {user.status === 'Active' && (
+                                    <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600 }}>
+                                      Active
+                                    </span>
+                                  )}
+                                  {user.status === 'Reported' && (
+                                    <span style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600 }}>
+                                      Reported
+                                    </span>
+                                  )}
+                                  {user.status === 'Suspended' && (
+                                    <span style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600 }}>
+                                      Suspended
+                                    </span>
+                                  )}
+                                </td>
+                                <td style={{ padding: '12px 14px', fontWeight: 600, color: user.complaints > 0 ? '#ef4444' : '#64748b', fontSize: '13px' }}>
+                                  {user.complaints}
+                                </td>
+                                <td style={{ padding: '12px 14px' }} onClick={(e) => e.stopPropagation()}>
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                    <button
+                                      onClick={() => { setSelectedUser(user); setShowUserDetails(true); }}
+                                      style={{
+                                        backgroundColor: '#0f2b48',
+                                        color: '#38bdf8',
+                                        border: '1px solid #0284c7',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        fontSize: '11px',
+                                        fontWeight: 600,
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      View
+                                    </button>
+                                    <button
+                                      onClick={() => handleAction(user, 'warn')}
+                                      style={{
+                                        backgroundColor: '#3f2e06',
+                                        color: '#fbbf24',
+                                        border: '1px solid #d97706',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        fontSize: '11px',
+                                        fontWeight: 600,
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      Warn
+                                    </button>
+                                    {user.status === 'Suspended' ? (
+                                      <button
+                                        onClick={() => handleAction(user, 'activate')}
+                                        style={{
+                                          backgroundColor: '#063726',
+                                          color: '#34d399',
+                                          border: '1px solid #10b981',
+                                          padding: '4px 10px',
+                                          borderRadius: '6px',
+                                          fontSize: '11px',
+                                          fontWeight: 600,
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        Activate
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleAction(user, 'suspend')}
+                                        style={{
+                                          backgroundColor: '#3b0707',
+                                          color: '#f87171',
+                                          border: '1px solid #dc2626',
+                                          padding: '4px 10px',
+                                          borderRadius: '6px',
+                                          fontSize: '11px',
+                                          fontWeight: 600,
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        Suspend
+                                      </button>
+                                    )}
+                                    <button style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}>
+                                      <MoreVertical size={14} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+
+                    {/* Table Footer Pagination */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderTop: '1px solid #1e293b', fontSize: '12px', color: '#94a3b8' }}>
+                      <div>Showing 1 to 10 of 12,480 users</div>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <button style={{ backgroundColor: '#1e293b', border: 'none', color: '#e2e8f0', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>&lt;</button>
+                        <button style={{ backgroundColor: '#0284c7', border: 'none', color: '#ffffff', padding: '4px 10px', borderRadius: '4px', fontWeight: 600 }}>1</button>
+                        <button style={{ backgroundColor: '#1e293b', border: 'none', color: '#e2e8f0', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>2</button>
+                        <button style={{ backgroundColor: '#1e293b', border: 'none', color: '#e2e8f0', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>3</button>
+                        <button style={{ backgroundColor: '#1e293b', border: 'none', color: '#e2e8f0', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>4</button>
+                        <button style={{ backgroundColor: '#1e293b', border: 'none', color: '#e2e8f0', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>5</button>
+                        <span>...</span>
+                        <button style={{ backgroundColor: '#1e293b', border: 'none', color: '#e2e8f0', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}>1248</button>
+                        <button style={{ backgroundColor: '#1e293b', border: 'none', color: '#e2e8f0', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>&gt;</button>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <span>Show</span>
+                        <select style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#ffffff', borderRadius: '4px', padding: '2px 6px', fontSize: '12px' }}>
+                          <option>10</option>
+                          <option>25</option>
+                          <option>50</option>
+                        </select>
+                        <span>per page</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Right Side Panel: User Details */}
+                {showUserDetails && selectedUser && (
+                  <div style={{ width: '330px', backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                    
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: '#ffffff' }}>User Details</h3>
+                      <button onClick={() => setShowUserDetails(false)} style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    {/* Profile Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <img
+                        src={selectedUser.avatar}
+                        alt={selectedUser.name}
+                        style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #0284c7' }}
+                      />
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <h4 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: '#ffffff' }}>{selectedUser.name}</h4>
+                          <span style={{
+                            backgroundColor: selectedUser.status === 'Active' ? 'rgba(16, 185, 129, 0.15)' : selectedUser.status === 'Reported' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                            color: selectedUser.status === 'Active' ? '#34d399' : selectedUser.status === 'Reported' ? '#fbbf24' : '#f87171',
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '10px'
+                          }}>
+                            {selectedUser.status}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+                          <Mail size={12} /> <span>{selectedUser.email}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                          <Phone size={12} /> <span>{selectedUser.phone}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                          <Clock size={12} /> <span>Joined: {selectedUser.joined}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4 Stat Boxes (2x2 Grid) */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div style={{ backgroundColor: '#1e293b', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>{selectedUser.details?.complaintsCount ?? selectedUser.complaints}</div>
+                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>Total Complaints</div>
+                      </div>
+                      <div style={{ backgroundColor: '#1e293b', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>{selectedUser.details?.reviewsCount ?? 5}</div>
+                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>Total Reviews</div>
+                      </div>
+                      <div style={{ backgroundColor: '#1e293b', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>{selectedUser.details?.offersUsed ?? 12}</div>
+                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>Offers Used</div>
+                      </div>
+                      <div style={{ backgroundColor: '#1e293b', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>{selectedUser.details?.savedDeals ?? 3}</div>
+                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>Saved Deals</div>
+                      </div>
+                    </div>
+
+                    {/* Recent Complaints */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>Recent Complaints</span>
+                        <span style={{ fontSize: '11px', color: '#38bdf8', cursor: 'pointer' }}>View All</span>
+                      </div>
+                      {selectedUser.details?.recentComplaints && selectedUser.details.recentComplaints.length > 0 ? (
+                        selectedUser.details.recentComplaints.map((c, i) => (
+                          <div key={i} style={{ backgroundColor: '#1e293b', borderRadius: '8px', padding: '10px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#831843', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <AlertCircle size={16} color="#f43f5e" />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                {c.title}
+                              </div>
+                              <div style={{ fontSize: '10px', color: '#94a3b8' }}>{c.sub}</div>
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#64748b' }}>{c.date}</div>
+                          </div>
+                        ))
+                      ) : (
+                        <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic', padding: '6px 0' }}>No complaints filed</div>
+                      )}
+                    </div>
+
+                    {/* Recent Activity */}
+                    <div>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff', display: 'block', marginBottom: '10px' }}>Recent Activity</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {(selectedUser.details?.recentActivity || [
+                          { title: 'Logged in from Dhaka, BD', date: 'Today, 10:24 AM', color: '#10b981' },
+                          { title: 'Account created', date: '12 Aug 2026', color: '#3b82f6' }
+                        ]).map((act, i) => (
+                          <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: act.color || '#10b981', marginTop: '4px' }} />
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#e2e8f0', fontWeight: 500 }}>{act.title}</div>
+                              <div style={{ fontSize: '10px', color: '#64748b' }}>{act.date}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+                      <button
+                        onClick={() => setIsSendMessageModalOpen(true)}
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#0284c7',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '10px',
+                          borderRadius: '8px',
+                          fontWeight: 600,
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Send size={14} />
+                        <span>Send Message</span>
+                      </button>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => handleAction(selectedUser, 'warn')}
+                          style={{
+                            flex: 1,
+                            backgroundColor: '#451a03',
+                            color: '#fbbf24',
+                            border: '1px solid #d97706',
+                            padding: '8px',
+                            borderRadius: '8px',
+                            fontWeight: 600,
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <AlertTriangle size={12} />
+                          <span>Warn User</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleAction(selectedUser, selectedUser.status === 'Suspended' ? 'activate' : 'suspend')}
+                          style={{
+                            flex: 1,
+                            backgroundColor: selectedUser.status === 'Suspended' ? '#064e3b' : '#450a0a',
+                            color: selectedUser.status === 'Suspended' ? '#34d399' : '#f87171',
+                            border: selectedUser.status === 'Suspended' ? '1px solid #10b981' : '1px solid #ef4444',
+                            padding: '8px',
+                            borderRadius: '8px',
+                            fontWeight: 600,
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {selectedUser.status === 'Suspended' ? <UserCheck size={12} /> : <UserX size={12} />}
+                          <span>{selectedUser.status === 'Suspended' ? 'Activate User' : 'Suspend User'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                )}
+
+              </div>
+
+            </div>
+          ) : activeTab === 'ride' ? (
             <div className="food-page-container">
 
               {/* Header Banner & Stats Row */}
@@ -5882,6 +6683,169 @@ export default function AdminDashboard({
 
         </main>
       </div>
+
+      {/* Add New User Modal */}
+      {isAddUserModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#0f172a',
+            border: '1px solid #334155',
+            borderRadius: '14px',
+            width: '100%',
+            maxWidth: '440px',
+            padding: '24px',
+            color: '#ffffff',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Add New User</h3>
+              <button onClick={() => setIsAddUserModalOpen(false)} style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddNewUserSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Nusrat Jahan"
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '10px 12px', color: '#ffffff', fontSize: '13px', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Email Address *</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. nusrat@gmail.com"
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '10px 12px', color: '#ffffff', fontSize: '13px', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Phone Number</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 01712-345678"
+                  value={newUserPhone}
+                  onChange={(e) => setNewUserPhone(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '10px 12px', color: '#ffffff', fontSize: '13px', outline: 'none' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Initial Account Status</label>
+                <select
+                  value={newUserStatus}
+                  onChange={(e) => setNewUserStatus(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '10px 12px', color: '#ffffff', fontSize: '13px', outline: 'none' }}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Reported">Reported</option>
+                  <option value="Suspended">Suspended</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsAddUserModalOpen(false)}
+                  style={{ flex: 1, backgroundColor: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', padding: '10px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ flex: 1, backgroundColor: '#0284c7', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
+                >
+                  Create User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Send Message Modal */}
+      {isSendMessageModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#0f172a',
+            border: '1px solid #334155',
+            borderRadius: '14px',
+            width: '100%',
+            maxWidth: '440px',
+            padding: '24px',
+            color: '#ffffff',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>Send Message to {selectedUser?.name}</h3>
+              <button onClick={() => setIsSendMessageModalOpen(false)} style={{ backgroundColor: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSendMessageSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Message Body</label>
+                <textarea
+                  rows={4}
+                  required
+                  placeholder="Type your message or notification..."
+                  value={userMessageContent}
+                  onChange={(e) => setUserMessageContent(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '10px 12px', color: '#ffffff', fontSize: '13px', outline: 'none', resize: 'vertical' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsSendMessageModalOpen(false)}
+                  style={{ flex: 1, backgroundColor: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', padding: '10px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{ flex: 1, backgroundColor: '#0284c7', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '8px', fontWeight: 600, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                >
+                  <Send size={14} />
+                  <span>Send</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

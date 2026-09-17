@@ -79,7 +79,7 @@ export const HERO_FEATURED_DEALS = {
     originalPrice: 260,
     savings: 65,
     savingsBadgeColor: 'orange',
-    image: '/assets/biryani.jpg',
+    image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80',
     providers: [
       { name: 'FoodPanda', price: 195, time: '20-30 min', isBest: true, color: '#d70f64' },
       { name: 'HungryNaki', price: 210, time: '25-30 min', isBest: false, color: '#ff6b00' },
@@ -96,11 +96,11 @@ export const HERO_FEATURED_DEALS = {
     cheapestPrice: 175,
     savings: 35,
     savingsBadgeColor: 'green',
-    image: '/assets/blue_car.jpg',
+    image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80',
     providers: [
       { name: 'Pathao', price: 185, time: '18 min', isCheapest: false },
       { name: 'Uber', price: 210, time: '16 min', isCheapest: false },
-      { name: 'Shohoz', price: 175, time: '21 min', isCheapest: true }
+      { name: 'Obhai', price: 175, time: '21 min', isCheapest: true }
     ],
     description: 'Real-time fare comparison for cars and bikes from Dhanmondi to Gulshan area.'
   },
@@ -114,7 +114,7 @@ export const HERO_FEATURED_DEALS = {
     originalPrice: 1200,
     savings: 350,
     savingsBadgeColor: 'purple',
-    image: '/assets/skincare.jpg',
+    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
     providers: [
       { name: 'Daraz', price: 850, isBest: true },
       { name: 'Beauty.com.bd', price: 890, isBest: false },

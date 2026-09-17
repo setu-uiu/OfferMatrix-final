@@ -1,15 +1,21 @@
 import React from 'react';
-import { Search, Copy, Check } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { POPULAR_SEARCHES, CATEGORIES } from '../data/dealsData';
 
 export default function HeroSection({
   searchQuery,
   setSearchQuery,
   selectedCategory,
-  setSelectedCategory,
-  onCopyCode,
-  copiedCode
+  setSelectedCategory
 }) {
+  const handleQuickCatClick = (catId) => {
+    setSelectedCategory(catId);
+    const el = document.getElementById(`${catId}-sector`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="hero-left">
       {/* Bangladesh Platform Pill */}
@@ -18,65 +24,56 @@ export default function HeroSection({
         BANGLADESH'S SMART DEAL PLATFORM
       </div>
 
-      {/* Main Headline */}
-      <h1 className="hero-title">
-        Compare <br />
-        Everything. <br />
-        <span className="text-gradient">Save More.</span>
-      </h1>
+      {/* Main Headline with Sprout Accent */}
+      <div style={{ position: 'relative' }}>
+        <h1 className="hero-title">
+          Compare <br />
+          Everything. <br />
+          <span className="text-gradient">Save More.</span>
+        </h1>
+        <span className="sprout-accent" title="Smart & Fresh Deals">🌿</span>
+      </div>
 
       {/* Subtitle */}
       <p className="hero-subtitle">
-        Food, Rides, Skin Care & more — <br />
+        Food, Rides, Skin Care &amp; more — <br />
         Best prices, best offers, all in one place.
       </p>
 
       {/* Quick Category Jump Icons */}
-      {(() => {
-        const handleQuickCatClick = (catId) => {
-          setSelectedCategory(catId);
-          const el = document.getElementById(`${catId}-sector`);
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth' });
-          }
-        };
+      <div className="category-quick-bar">
+        <div
+          className={`cat-card ${selectedCategory === 'food' ? 'active' : ''}`}
+          onClick={() => handleQuickCatClick('food')}
+        >
+          <div className="cat-icon-wrap" style={{ background: '#fff0ec' }}>🍔</div>
+          <span className="cat-name">Food</span>
+        </div>
 
-        return (
-          <div className="category-quick-bar">
-            <div
-              className={`cat-card ${selectedCategory === 'food' ? 'active' : ''}`}
-              onClick={() => handleQuickCatClick('food')}
-            >
-              <div className="cat-icon-wrap" style={{ background: '#fff0ec' }}>🍔</div>
-              <span className="cat-name">Food</span>
-            </div>
+        <div
+          className={`cat-card ${selectedCategory === 'rides' ? 'active' : ''}`}
+          onClick={() => handleQuickCatClick('rides')}
+        >
+          <div className="cat-icon-wrap" style={{ background: '#e6f9f0' }}>🚗</div>
+          <span className="cat-name">Rides</span>
+        </div>
 
-            <div
-              className={`cat-card ${selectedCategory === 'rides' ? 'active' : ''}`}
-              onClick={() => handleQuickCatClick('rides')}
-            >
-              <div className="cat-icon-wrap" style={{ background: '#e6f9f0' }}>🚗</div>
-              <span className="cat-name">Rides</span>
-            </div>
+        <div
+          className={`cat-card ${selectedCategory === 'skincare' ? 'active' : ''}`}
+          onClick={() => handleQuickCatClick('skincare')}
+        >
+          <div className="cat-icon-wrap" style={{ background: '#f3e8ff' }}>🧴</div>
+          <span className="cat-name">Skin Care</span>
+        </div>
 
-            <div
-              className={`cat-card ${selectedCategory === 'skincare' ? 'active' : ''}`}
-              onClick={() => handleQuickCatClick('skincare')}
-            >
-              <div className="cat-icon-wrap" style={{ background: '#f3e8ff' }}>🧴</div>
-              <span className="cat-name">Skin Care</span>
-            </div>
-
-            <div
-              className={`cat-card ${selectedCategory === 'coupons' ? 'active' : ''}`}
-              onClick={() => handleQuickCatClick('coupons')}
-            >
-              <div className="cat-icon-wrap" style={{ background: '#fefce8' }}>🎟️</div>
-              <span className="cat-name">Coupons</span>
-            </div>
-          </div>
-        );
-      })()}
+        <div
+          className={`cat-card ${selectedCategory === 'coupons' ? 'active' : ''}`}
+          onClick={() => handleQuickCatClick('coupons')}
+        >
+          <div className="cat-icon-wrap" style={{ background: '#fefce8' }}>🎟️</div>
+          <span className="cat-name">Coupons</span>
+        </div>
+      </div>
 
       {/* Interactive Search Bar */}
       <div className="search-container">
@@ -87,7 +84,7 @@ export default function HeroSection({
             className="search-input"
             placeholder="What are you looking for?"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.value ? e.value : e.target.value)}
           />
         </div>
 
@@ -103,59 +100,21 @@ export default function HeroSection({
           ))}
         </select>
 
-        <button className="btn-search" onClick={() => { }}>
+        <button className="btn-search pink-search-btn">
           Search
         </button>
       </div>
 
       {/* Popular Searches */}
       <div className="popular-searches">
-        <span style={{ fontWeight: 600 }}>Popular Searches:</span>
-        {POPULAR_SEARCHES.map((item, idx) => (
-          <span
-            key={idx}
-            className="popular-tag"
-            onClick={() => setSearchQuery(item)}
-          >
-            {item}
-          </span>
-        ))}
+        <span style={{ fontWeight: 600, color: '#6b7280' }}>Popular Searches:</span>
+        <span className="popular-tag" onClick={() => setSearchQuery('Chicken Biryani')}>Chicken Biryani</span>
+        <span className="popular-tag" onClick={() => setSearchQuery('Ride to Gulshan')}>Ride to Gulshan</span>
+        <span className="popular-tag" onClick={() => setSearchQuery('Niacinamide Serum')}>Niacinamide Serum</span>
+        <span className="popular-tag" onClick={() => setSearchQuery('Dhaka ➔ Chittagong')}>Dhaka ➔ Chittagong</span>
       </div>
 
-      {/* Promo Discount Banner */}
-      <div className="promo-banner-card">
-        <div className="promo-left">
-          <div className="promo-badge-circle">
-            <div className="promo-badge-top">EXTRA</div>
-            <div className="promo-badge-percent">10%</div>
-            <div className="promo-badge-top">OFF</div>
-            <div className="promo-badge-sub">On All Orders</div>
-          </div>
-          <div className="promo-details">
-            <div className="promo-code-box">
-              <span className="promo-code-text">Use Code:</span>
-              <span className="code-pill">SAVE10</span>
-            </div>
-          </div>
-        </div>
-
-        <button
-          className="btn-copy-code"
-          onClick={() => onCopyCode('SAVE10')}
-        >
-          {copiedCode ? (
-            <>
-              <Check size={16} />
-              Copied!
-            </>
-          ) : (
-            <>
-              Copy Code 📋
-            </>
-          )}
-        </button>
-      </div>
-
+      {/* Trust Metrics */}
       <div className="hero-trust-row" aria-label="OfferMatrix platform highlights">
         <div className="trust-stat">
           <strong>12k+</strong>

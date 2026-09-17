@@ -334,8 +334,9 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                 <div 
                   className="explore-card store-card indriver-card"
                   onClick={() => {
-                    if (onSelectCategory) onSelectCategory('rides');
-                    onToast('Selected inDriver Fares! 🚘');
+                    if (onSelectCategory) onSelectCategory('indriver');
+                    onToast('Selected inDriver Fares & Delivery! 🚘');
+                    onClose();
                   }}
                   style={{ background: '#ffffff', borderRadius: '20px', border: '2px solid #4ade80', overflow: 'hidden', cursor: 'pointer', boxShadow: '0 8px 24px rgba(34, 197, 94, 0.12)', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease' }}
                 >

@@ -17,6 +17,7 @@ import FoodiPage from './components/FoodiPage';
 import PathaoPage from './components/PathaoPage';
 import UberPage from './components/UberPage';
 import ObhaiPage from './components/ObhaiPage';
+import IndriverPage from './components/IndriverPage';
 import SectorSections from './components/SectorSections';
 import SubscriptionSection from './components/SubscriptionSection';
 import AdminDashboard from './components/AdminDashboard';
@@ -257,6 +258,16 @@ export default function App() {
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
         />
+      ) : selectedCategory === 'indriver' || activeView === 'indriver' || selectedCategory === 'indrive' || activeView === 'indrive' ? (
+        <IndriverPage
+          offers={indriverOffers}
+          onBack={() => {
+            setSelectedCategory('all');
+            setActiveView('landing');
+          }}
+          onToast={triggerToast}
+          onAddToCart={handleAddToCart}
+        />
       ) : activeView === 'admin' || currentUser?.role === 'admin' ? (
         <AdminDashboard
           currentUser={currentUser}
@@ -320,6 +331,10 @@ export default function App() {
             setSelectedCategory('obhai');
             setActiveView('obhai');
           }}
+          onOpenIndriver={() => {
+            setSelectedCategory('indriver');
+            setActiveView('indriver');
+          }}
           initialTab={
             selectedCategory === 'food'
               ? 'food'
@@ -362,15 +377,17 @@ export default function App() {
                 copiedCode={copiedCode}
               />
 
-              {/* Right Column: Original 3 Deal Cards */}
+              {/* Right Column: Hero Deal Cards */}
               <HeroDealsGrid
                 savedDeals={savedDeals}
                 toggleSaveDeal={toggleSaveDeal}
                 onOpenDealDetail={(deal) => setActiveDealDetail(deal)}
+                onCopyCode={handleCopyCode}
+                copiedCode={copiedCode}
               />
             </div>
 
-            {/* Divided Sector Sections (Food, Rides, Skincare, Coupons, Flash Deals) */}
+            {/* New Landing Page Sections matching reference images */}
             <SectorSections
               selectedCategory={selectedCategory}
               savedDeals={savedDeals}
@@ -382,47 +399,73 @@ export default function App() {
               onToast={triggerToast}
               onOpenAuth={() => setIsAuthModalOpen(true)}
             />
-
-            {/* Premium & Subscription Option Sector */}
-            <SubscriptionSection
-              selectedCategory={selectedCategory}
-              onToast={triggerToast}
-              onOpenAuth={() => setIsAuthModalOpen(true)}
-            />
-
-            {/* All Deals Grid with Filter & Sort */}
-            <div id="all-deals-grid">
-              <AllDealsGrid
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                searchQuery={searchQuery}
-                savedDeals={savedDeals}
-                toggleSaveDeal={toggleSaveDeal}
-                onOpenDealDetail={(deal) => setActiveDealDetail(deal)}
-              />
-            </div>
           </main>
 
-          {/* Footer */}
-          <footer style={{
-            marginTop: '60px',
-            padding: '32px 24px',
-            background: 'rgba(255, 255, 255, 0.8)',
-            borderTop: '1px solid #e5e7eb',
-            textAlign: 'center',
-            color: '#6b7280',
-            fontSize: '14px'
-          }}>
-            <div style={{ maxWidth: '1280px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
-              <div style={{ fontWeight: 800, fontSize: '18px', color: '#111827' }}>
-                Offer<span style={{ color: '#00c853' }}>Matrix</span> – Bangladesh's Smart Deal Platform
+          {/* Dark Footer matching Image 5 */}
+          <footer className="main-dark-footer">
+            <div className="footer-top-grid">
+              {/* Col 1: Brand Info */}
+              <div className="footer-col brand-col">
+                <div className="footer-logo">
+                  <span className="logo-box-pink">%</span>
+                  <span className="logo-text-dark">Offer<span className="logo-green">Matrix</span></span>
+                </div>
+                <p className="footer-brand-sub">
+                  Bangladesh's Smart Deal Platform <br />
+                  Compare. Save. Live Better.
+                </p>
+                <div className="footer-social-row">
+                  <a href="#fb" className="social-btn fb">f</a>
+                  <a href="#ig" className="social-btn ig">📷</a>
+                  <a href="#yt" className="social-btn yt">▶</a>
+                  <a href="#in" className="social-btn in">in</a>
+                </div>
               </div>
-              <div>
-                Compare food, rides, skincare &amp; coupons across FoodPanda, Pathao, Uber, Shohoz, Daraz &amp; Pickaboo.
+
+              {/* Col 2: Quick Links */}
+              <div className="footer-col">
+                <h4 className="footer-col-title">Quick Links</h4>
+                <ul className="footer-links-list">
+                  <li><a href="#home" onClick={(e) => { e.preventDefault(); setSelectedCategory('all'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Home</a></li>
+                  <li><a href="#food" onClick={(e) => { e.preventDefault(); setSelectedCategory('food'); }}>Food</a></li>
+                  <li><a href="#rides" onClick={(e) => { e.preventDefault(); setSelectedCategory('rides'); }}>Rides</a></li>
+                  <li><a href="#skincare" onClick={(e) => { e.preventDefault(); setSelectedCategory('skincare'); }}>Skin Care</a></li>
+                  <li><a href="#coupons" onClick={(e) => { e.preventDefault(); setSelectedCategory('coupons'); }}>Coupons</a></li>
+                  <li><a href="#deals" onClick={(e) => { e.preventDefault(); setSelectedCategory('deals'); }}>Deals</a></li>
+                  <li><a href="#blog" onClick={(e) => { e.preventDefault(); triggerToast('OfferMatrix Blog loaded'); }}>Blog</a></li>
+                </ul>
               </div>
-              <div>
-                © {new Date().getFullYear()} OfferMatrix. All rights reserved.
+
+              {/* Col 3: Support */}
+              <div className="footer-col">
+                <h4 className="footer-col-title">Support</h4>
+                <ul className="footer-links-list">
+                  <li><a href="#help" onClick={(e) => { e.preventDefault(); triggerToast('Help Center opened'); }}>Help Center</a></li>
+                  <li><a href="#contact" onClick={(e) => { e.preventDefault(); triggerToast('Contact Us: support@offermatrix.bd'); }}>Contact Us</a></li>
+                  <li><a href="#report" onClick={(e) => { e.preventDefault(); triggerToast('Report Issue Form loaded'); }}>Report an Issue</a></li>
+                  <li><a href="#terms" onClick={(e) => { e.preventDefault(); triggerToast('Terms of Service'); }}>Terms of Service</a></li>
+                  <li><a href="#privacy" onClick={(e) => { e.preventDefault(); triggerToast('Privacy Policy'); }}>Privacy Policy</a></li>
+                  <li><a href="#faq" onClick={(e) => { e.preventDefault(); triggerToast('Frequently Asked Questions'); }}>FAQ</a></li>
+                </ul>
               </div>
+
+              {/* Col 4: Download App */}
+              <div className="footer-col app-col">
+                <h4 className="footer-col-title">Download App</h4>
+                <div className="footer-app-btns">
+                  <a href="#play" className="footer-store-btn" onClick={(e) => { e.preventDefault(); triggerToast('Google Play download link'); }}>
+                    <span>▶</span> GET IT ON Google Play
+                  </a>
+                  <a href="#store" className="footer-store-btn" onClick={(e) => { e.preventDefault(); triggerToast('App Store download link'); }}>
+                    <span></span> Download on App Store
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="footer-bottom-bar">
+              <span>© {new Date().getFullYear()} OfferMatrix. All rights reserved.</span>
+              <span>Made with ❤️ in Bangladesh</span>
             </div>
           </footer>
         </>
@@ -486,6 +529,8 @@ export default function App() {
               setActiveView('uber');
             } else if (cat === 'obhai') {
               setActiveView('obhai');
+            } else if (cat === 'indriver' || cat === 'indrive') {
+              setActiveView('indriver');
             } else {
               setActiveView('dashboard');
             }

@@ -26,6 +26,7 @@ export default function UserDashboard({
   onOpenPathao,
   onOpenUber,
   onOpenObhai,
+  onOpenIndriver,
   initialTab = 'food'
 }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -1918,8 +1919,8 @@ export default function UserDashboard({
             <span>Saved (6)</span>
           </button>
 
-          <div 
-            className="dash-user-profile-chip" 
+          <div
+            className="dash-user-profile-chip"
             style={{ position: 'relative', cursor: 'pointer' }}
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
           >
@@ -1937,7 +1938,7 @@ export default function UserDashboard({
             <ChevronDown size={14} color="#6b7280" />
 
             {isUserMenuOpen && (
-              <div 
+              <div
                 style={{
                   position: 'absolute',
                   top: '100%',
@@ -2220,16 +2221,6 @@ export default function UserDashboard({
                     </span>
                     <span
                       className="category-tag-pill"
-                      style={{ cursor: 'pointer', background: '#e0f2fe', color: '#0369a1', border: '1px solid #0284c7', fontWeight: 800 }}
-                      onClick={() => {
-                        setActiveTab('complain_issues');
-                        setComplainCategoryFilter('viral');
-                      }}
-                    >
-                      🔥 Viral Restaurant Raids
-                    </span>
-                    <span
-                      className="category-tag-pill"
                       style={{ cursor: 'pointer' }}
                       onClick={() => {
                         setActiveTab('ride');
@@ -2261,36 +2252,14 @@ export default function UserDashboard({
                     <p className="food-hero-desc">
                       Compare prices, delivery time, offers &amp; save more every time.
                     </p>
-                    <button
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        background: '#e0f2fe',
-                        color: '#0369a1',
-                        border: '1px solid #0284c7',
-                        padding: '8px 16px',
-                        borderRadius: '20px',
-                        fontSize: '12.5px',
-                        fontWeight: 900,
-                        cursor: 'pointer',
-                        marginTop: '12px',
-                        boxShadow: '0 4px 12px rgba(2, 132, 199, 0.2)'
-                      }}
-                      onClick={() => {
-                        setActiveTab('complain_issues');
-                        setComplainCategoryFilter('viral');
-                      }}
-                    >
-                      🔥 View Executive Magistrate Restaurant Raids &amp; Fines →
-                    </button>
                   </div>
                   <div className="food-hero-right">
-                    <div className="food-hero-img-mask">
+                    <div className="food-hero-img-wrap" style={{ width: '280px', height: '160px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(2, 132, 199, 0.15)' }}>
                       <img
-                        src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80"
-                        alt="Healthy Salad Dish"
+                        src="https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80"
+                        alt="Healthy Food Bowl"
                         className="food-hero-img"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     </div>
                   </div>
@@ -3233,11 +3202,12 @@ export default function UserDashboard({
                     </p>
                   </div>
                   <div className="ride-hero-right">
-                    <div className="ride-hero-img-mask">
+                    <div className="ride-hero-img-wrap" style={{ width: '280px', height: '150px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(136, 19, 55, 0.12)' }}>
                       <img
                         src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80"
                         alt="White Sedan Car"
                         className="ride-hero-img"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     </div>
                   </div>
