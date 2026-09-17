@@ -147,7 +147,13 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                 <button 
                   type="button" 
                   className="ride-back-btn" 
-                  onClick={() => setRideSubStep(false)}
+                  onClick={() => {
+                    if (initialCategory) {
+                      onClose();
+                    } else {
+                      setRideSubStep(false);
+                    }
+                  }}
                   style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#ffffff', border: '1.5px solid #3b82f6', borderRadius: '99px', padding: '6px 18px', fontSize: '13px', fontWeight: 800, color: '#2563eb', boxShadow: '0 4px 14px rgba(37, 99, 235, 0.12)', transition: 'all 0.2s ease' }}
                 >
                   <ArrowLeft size={16} />
@@ -408,7 +414,13 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                 <button
                   type="button"
                   className="skincare-back-btn food-back-btn"
-                  onClick={() => setFoodSubStep(false)}
+                  onClick={() => {
+                    if (initialCategory) {
+                      onClose();
+                    } else {
+                      setFoodSubStep(false);
+                    }
+                  }}
                   style={{ position: 'relative', zIndex: 100, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#ffffff', border: '2px solid #ff2b70', borderRadius: '99px', padding: '10px 22px', fontSize: '14px', fontWeight: 800, color: '#ff2b70', boxShadow: '0 4px 16px rgba(255, 43, 112, 0.25)' }}
                 >
                   <ArrowLeft size={18} />
@@ -558,7 +570,13 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                 <button
                   type="button"
                   className="skincare-back-btn"
-                  onClick={() => setSkincareSubStep(false)}
+                  onClick={() => {
+                    if (initialCategory) {
+                      onClose();
+                    } else {
+                      setSkincareSubStep(false);
+                    }
+                  }}
                   style={{ position: 'relative', zIndex: 100, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#ffffff', border: '2px solid #ff2b70', borderRadius: '99px', padding: '10px 22px', fontSize: '14px', fontWeight: 800, color: '#ff2b70', boxShadow: '0 4px 16px rgba(255, 43, 112, 0.25)' }}
                 >
                   <ArrowLeft size={18} />

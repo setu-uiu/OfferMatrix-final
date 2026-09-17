@@ -40,6 +40,7 @@ export default function App() {
   const [activeDealDetail, setActiveDealDetail] = useState(null);
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authCategory, setAuthCategory] = useState(null);
 
   // Copy code & Toast state
   const [copiedCode, setCopiedCode] = useState('');
@@ -110,6 +111,7 @@ export default function App() {
     setActiveDealDetail(null);
     setIsSavedModalOpen(false);
     setIsAuthModalOpen(false);
+    setAuthCategory(null);
     triggerToast('Logged out successfully 👋');
   };
 
@@ -184,8 +186,10 @@ export default function App() {
       {selectedCategory === 'choice_legacy' || activeView === 'choice_legacy' ? (
         <ChoiceLegacyPage
           onBack={() => {
-            setSelectedCategory('all');
             setActiveView('landing');
+            setSelectedCategory('skincare');
+            setAuthCategory('skincare');
+            setIsAuthModalOpen(true);
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
@@ -193,8 +197,10 @@ export default function App() {
       ) : selectedCategory === 'kirei' || activeView === 'kirei' ? (
         <KireiPage
           onBack={() => {
-            setSelectedCategory('all');
             setActiveView('landing');
+            setSelectedCategory('skincare');
+            setAuthCategory('skincare');
+            setIsAuthModalOpen(true);
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
@@ -202,8 +208,10 @@ export default function App() {
       ) : selectedCategory === 'makeup_chari' || activeView === 'makeup_chari' ? (
         <MakeupChariPage
           onBack={() => {
-            setSelectedCategory('all');
             setActiveView('landing');
+            setSelectedCategory('skincare');
+            setAuthCategory('skincare');
+            setIsAuthModalOpen(true);
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
@@ -212,8 +220,10 @@ export default function App() {
         <FoodpandaPage
           offers={foodpandaOffers}
           onBack={() => {
-            setSelectedCategory('all');
             setActiveView('landing');
+            setSelectedCategory('food');
+            setAuthCategory('food');
+            setIsAuthModalOpen(true);
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
@@ -222,8 +232,10 @@ export default function App() {
         <FoodiPage
           offers={foodiOffers}
           onBack={() => {
-            setSelectedCategory('all');
             setActiveView('landing');
+            setSelectedCategory('food');
+            setAuthCategory('food');
+            setIsAuthModalOpen(true);
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
@@ -232,8 +244,10 @@ export default function App() {
         <PathaoPage
           offers={pathaoOffers}
           onBack={() => {
-            setSelectedCategory('all');
             setActiveView('landing');
+            setSelectedCategory('food');
+            setAuthCategory('food');
+            setIsAuthModalOpen(true);
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
@@ -242,8 +256,10 @@ export default function App() {
         <UberPage
           offers={uberOffers}
           onBack={() => {
-            setSelectedCategory('all');
             setActiveView('landing');
+            setSelectedCategory('rides');
+            setAuthCategory('rides');
+            setIsAuthModalOpen(true);
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
@@ -252,8 +268,10 @@ export default function App() {
         <ObhaiPage
           offers={obhaiOffers}
           onBack={() => {
-            setSelectedCategory('all');
             setActiveView('landing');
+            setSelectedCategory('rides');
+            setAuthCategory('rides');
+            setIsAuthModalOpen(true);
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
@@ -262,8 +280,10 @@ export default function App() {
         <IndriverPage
           offers={indriverOffers}
           onBack={() => {
-            setSelectedCategory('all');
             setActiveView('landing');
+            setSelectedCategory('rides');
+            setAuthCategory('rides');
+            setIsAuthModalOpen(true);
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
@@ -508,9 +528,13 @@ export default function App() {
 
       {isAuthModalOpen && (
         <AuthModal
-          onClose={() => setIsAuthModalOpen(false)}
+          onClose={() => {
+            setIsAuthModalOpen(false);
+            setAuthCategory(null);
+          }}
           onToast={triggerToast}
           onLoginSuccess={handleLoginSuccess}
+          initialCategory={authCategory}
           onSelectCategory={(cat) => {
             setSelectedCategory(cat);
             if (cat === 'choice_legacy') {
