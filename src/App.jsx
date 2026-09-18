@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { OfferMatrixAPI } from './services/api';
 import Navbar from './components/Navbar';
+
 import HeroSection from './components/HeroSection';
 import HeroDealsGrid from './components/HeroDealsGrid';
 import AllDealsGrid from './components/AllDealsGrid';
@@ -85,6 +87,27 @@ export default function App() {
     { id: 2, title: 'Intercity Bargain Special', discount: '৳100', validTill: '25 Sep 2026', status: 'Active', code: 'INDRIVER100' },
     { id: 3, title: 'First InDriver Trip Offer', discount: '20%', validTill: '28 Sep 2026', status: 'Active', code: 'INDRIVERFIRST' }
   ]);
+
+  useEffect(() => {
+    async function loadBackendData() {
+      const dbOffers = await OfferMatrixAPI.getOffers();
+      if (dbOffers && Array.isArray(dbOffers) && dbOffers.length > 0) {
+        const fp = dbOffers.filter(o => o.platform === 'foodpanda');
+        const fi = dbOffers.filter(o => o.platform === 'foodi');
+        const pt = dbOffers.filter(o => o.platform === 'pathao_food' || o.platform === 'pathao');
+        const ub = dbOffers.filter(o => o.platform === 'uber');
+        const ob = dbOffers.filter(o => o.platform === 'obhai');
+        const idr = dbOffers.filter(o => o.platform === 'indrive' || o.platform === 'indriver');
+        if (fp.length > 0) setFoodpandaOffers(fp);
+        if (fi.length > 0) setFoodiOffers(fi);
+        if (pt.length > 0) setPathaoOffers(pt);
+        if (ub.length > 0) setUberOffers(ub);
+        if (ob.length > 0) setObhaiOffers(ob);
+        if (idr.length > 0) setIndriverOffers(idr);
+      }
+    }
+    loadBackendData();
+  }, []);
 
   const triggerToast = (msg) => {
     setToastMessage(msg);

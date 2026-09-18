@@ -55,7 +55,7 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
     const isAdmin = accountType === 'admin' || (email && email.toLowerCase().includes('admin'));
     const roleName = isAdmin ? 'admin' : (accountType || 'user');
     const userName = isAdmin ? 'Admin' : (fullName || 'Meherunnesasetu7');
-    
+
     onToast(`Welcome, ${userName}! ${isAdmin ? 'Admin' : ''} Account created successfully.`);
     if (onLoginSuccess) {
       onLoginSuccess({
@@ -112,12 +112,29 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
       <div className={`auth-modal-wrapper ${signUpStep === 'merchant_explore' ? 'explore-mode' : ''}`}>
         {/* Top Header Bar */}
         <div className="auth-top-header">
-          <div className="logo-wrapper" onClick={onClose} style={{ cursor: 'pointer' }}>
-            <div className="logo-icon">
-              <Percent size={20} strokeWidth={3} />
-            </div>
-            <div className="logo-text">
-              Offer<span>Matrix</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button
+              type="button"
+              className="auth-header-back-btn"
+              onClick={() => {
+                if (signUpStep !== 'select' && isSignUp && signUpStep !== 'merchant_explore') {
+                  setSignUpStep('select');
+                } else {
+                  onClose();
+                }
+              }}
+            >
+              <ArrowLeft size={16} color="#ff2b70" strokeWidth={2.5} />
+              <span>Back to OfferMatrix</span>
+            </button>
+
+            <div className="logo-wrapper" onClick={onClose} style={{ cursor: 'pointer' }}>
+              <div className="logo-icon">
+                <Percent size={20} strokeWidth={3} />
+              </div>
+              <div className="logo-text">
+                Offer<span>Matrix</span>
+              </div>
             </div>
           </div>
 
@@ -144,9 +161,9 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
 
               {/* Top Sub Navigation Bar */}
               <div className="explore-top-nav ride-top-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', position: 'relative', zIndex: 10, flexShrink: 0 }}>
-                <button 
-                  type="button" 
-                  className="ride-back-btn" 
+                <button
+                  type="button"
+                  className="ride-back-btn"
                   onClick={() => {
                     if (initialCategory) {
                       onClose();
@@ -233,7 +250,7 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
               {/* 3 Main Eyecatchy Platform Cards Grid (Fits 100% inside screen) */}
               <div className="explore-cards-grid ride-stores-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', position: 'relative', zIndex: 10, flex: 1, minHeight: '0' }}>
                 {/* UBER CARD */}
-                <div 
+                <div
                   className="explore-card store-card uber-card"
                   onClick={() => {
                     if (onSelectCategory) onSelectCategory('uber');
@@ -243,8 +260,8 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                 >
                   {/* Car Photo Header */}
                   <div style={{ position: 'relative', height: '95px', overflow: 'hidden', flexShrink: 0 }}>
-                    <img 
-                      src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80" 
+                    <img
+                      src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80"
                       alt="Uber Sedan"
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
@@ -285,7 +302,7 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                 </div>
 
                 {/* OBHAI CARD */}
-                <div 
+                <div
                   className="explore-card store-card obhai-card"
                   onClick={() => {
                     if (onSelectCategory) onSelectCategory('obhai');
@@ -295,8 +312,8 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                 >
                   {/* Car Photo Header */}
                   <div style={{ position: 'relative', height: '105px', overflow: 'hidden', flexShrink: 0 }}>
-                    <img 
-                      src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80" 
+                    <img
+                      src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80"
                       alt="OBHAI Yellow Car"
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
@@ -337,7 +354,7 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                 </div>
 
                 {/* INDRIVER CARD */}
-                <div 
+                <div
                   className="explore-card store-card indriver-card"
                   onClick={() => {
                     if (onSelectCategory) onSelectCategory('indriver');
@@ -348,8 +365,8 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                 >
                   {/* Car Photo Header */}
                   <div style={{ position: 'relative', height: '105px', overflow: 'hidden', flexShrink: 0 }}>
-                    <img 
-                      src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80" 
+                    <img
+                      src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80"
                       alt="inDriver Modern Car"
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />

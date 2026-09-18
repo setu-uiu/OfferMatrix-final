@@ -1,0 +1,253 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique // "ADMIN", "USER", "MERCHANT"
+  description String?
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id               String          @id @default(uuid())
+  email            String          @unique
+  name             String
+  phone            String?
+  avatar           String?
+  status           String          @default("Active") // "Active", "Reported", "Suspended"
+  subscriptionPlan String          @default("free") // "free", "pro", "vip"
+  roleId           String?
+  role             Role?           @relation(fields: [roleId], references: [id])
+  savedDeals       SavedDeal[]
+  priceAlerts      PriceAlert[]
+  complaints       Complaint[]
+  reviews          Review[]
+  notifications    Notification[]
+  auditLogs        AdminAuditLog[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model Merchant {
+  id         String   @id @default(uuid())
+  name       String
+  category   String   // "Food", "Rides", "Skincare", etc.
+  logo       String?
+  rating     Float    @default(5.0)
+  totalDeals Int      @default(0)
+  contact    String?
+  status     String   @default("Active") // "Active", "Pending", "Suspended"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model FoodDeal {
+  id            String   @id @default(uuid())
+  title         String
+  restaurant    String
+  bestPrice     Float
+  originalPrice Float
+  savings       Float
+  tag           String?
+  image         String
+  rating        Float    @default(4.8)
+  reviewsCount  Int      @default(100)
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model RideDeal {
+  id            String   @id @default(uuid())
+  title         String
+  route         String
+  cheapestPrice Float
+  originalPrice Float
+  savings       Float
+  tag           String?
+  image         String
+  rating        Float    @default(4.8)
+  reviewsCount  Int      @default(100)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SkincareDeal {
+  id            String   @id @default(uuid())
+  title         String
+  brand         String
+  bestPrice     Float
+  originalPrice Float
+  savings       Float
+  tag           String?
+  image         String
+  rating        Float    @default(4.9)
+  reviewsCount  Int      @default(100)
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Offer {
+  id              String   @id @default(uuid())
+  platform        String   // Canonical: foodpanda, foodi, pathao_food, uber, obhai, indrive, choice_legacy, kirei, makeup_chari
+
+  title           String
+  discount        String
+  validTill       String
+  status          String   @default("Active") // "Active", "Expired"
+  code            String
+  category        String?
+  merchantName    String?
+  claimProgress   Int?     @default(0)
+  isFlash         Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Coupon {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  title       String
+  platform    String
+  minOrder    String
+  expiry      String
+  category    String
+  bg          String?
+  borderColor String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BankOffer {
+  id          String   @id @default(uuid())
+  bankName    String   // e.g. "BRAC Bank", "City Bank", "EBL", "Standard Chartered"
+  cardType    String   // "Credit", "Debit", "Visa", "Mastercard", "Amex"
+  offerTitle  String
+  discount    String
+  validTill   String
+  code        String?
+  bannerImage String?
+  status      String   @default("Active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BkashOffer {
+  id          String   @id @default(uuid())
+  title       String
+  discount    String
+  cashback    String?
+  merchant    String?
+  code        String
+  validTill   String
+  status      String   @default("Active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model NagadOffer {
+  id          String   @id @default(uuid())
+  title       String
+  discount    String
+  cashback    String?
+  merchant    String?
+  code        String
+  validTill   String
+  status      String   @default("Active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RocketOffer {
+  id          String   @id @default(uuid())
+  title       String
+  discount    String
+  cashback    String?
+  merchant    String?
+  code        String
+  validTill   String
+  status      String   @default("Active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SavedDeal {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dealId    String
+  category  String
+  title     String
+  price     Float
+  image     String?
+  createdAt DateTime @default(now())
+}
+
+model PriceAlert {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dealId      String
+  title       String
+  targetPrice Float
+  channel     String   @default("Email") // "Email", "SMS", "WhatsApp", "Push"
+  status      String   @default("Active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Complaint {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  subCategory String?  // e.g., "Skincare", "Food", "Wallet", "Rides"
+  status      String   @default("Open") // "Open", "Resolved", "Under Review"
+  date        String
+  details     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dealId    String
+  category  String
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("system") // "system", "deal", "alert"
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AdminAuditLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action    String
+  target    String?
+  details   String?
+  date      String
+  color     String?  @default("#3b82f6")
+  createdAt DateTime @default(now())
+}
