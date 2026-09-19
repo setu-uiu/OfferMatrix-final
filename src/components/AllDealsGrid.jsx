@@ -8,16 +8,18 @@ export default function AllDealsGrid({
   searchQuery,
   savedDeals,
   toggleSaveDeal,
-  onOpenDealDetail
+  onOpenDealDetail,
+  deals = []
 }) {
   const [sortBy, setSortBy] = useState('discount');
+  const sourceDeals = (deals && deals.length > 0) ? deals : ALL_DEALS;
 
   // Filter deals
-  const filteredDeals = ALL_DEALS.filter((deal) => {
+  const filteredDeals = sourceDeals.filter((deal) => {
     const matchesCategory = selectedCategory === 'all' || deal.category === selectedCategory;
     const matchesSearch = searchQuery === '' || 
       deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      deal.tag.toLowerCase().includes(searchQuery.toLowerCase());
+      (deal.tag && deal.tag.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
 

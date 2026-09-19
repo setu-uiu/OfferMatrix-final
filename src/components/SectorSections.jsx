@@ -110,7 +110,7 @@ export default function SectorSections({
     {
       id: 'pop-4',
       title: 'Dhaka to Chittagong',
-      category: 'delivery',
+      category: 'rides',
       merchant: 'Shohoz',
       merchantLogo: '🚌',
       discountBadge: '৳300 OFF',
@@ -243,14 +243,6 @@ export default function SectorSections({
         </div>
 
         <div
-          className={`category-icon-item ${selectedCategory === 'delivery' ? 'active' : ''}`}
-          onClick={() => setSelectedCategory('delivery')}
-        >
-          <div className="cat-bubble green-bg">📦</div>
-          <span>Delivery</span>
-        </div>
-
-        <div
           className={`category-icon-item ${selectedCategory === 'bank' ? 'active' : ''}`}
           onClick={() => setSelectedCategory('bank')}
         >
@@ -375,12 +367,6 @@ export default function SectorSections({
               onClick={() => setPopularTab('skincare')}
             >
               Skin Care
-            </button>
-            <button
-              className={`pop-tab ${popularTab === 'delivery' ? 'active' : ''}`}
-              onClick={() => setPopularTab('delivery')}
-            >
-              Delivery
             </button>
             <button
               className={`pop-tab ${popularTab === 'bank' ? 'active' : ''}`}

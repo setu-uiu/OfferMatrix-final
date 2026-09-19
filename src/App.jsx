@@ -88,22 +88,109 @@ export default function App() {
     { id: 3, title: 'First InDriver Trip Offer', discount: '20%', validTill: '28 Sep 2026', status: 'Active', code: 'INDRIVERFIRST' }
   ]);
 
+  // Database State fetched from Express/PostgreSQL API
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiError, setApiError] = useState(null);
+
+  const [dbFoodDeals, setDbFoodDeals] = useState([]);
+  const [dbRideDeals, setDbRideDeals] = useState([]);
+  const [dbSkincareDeals, setDbSkincareDeals] = useState([]);
+  const [dbCoupons, setDbCoupons] = useState([]);
+  const [dbBankOffers, setDbBankOffers] = useState([]);
+  const [dbBkashOffers, setDbBkashOffers] = useState([]);
+  const [dbNagadOffers, setDbNagadOffers] = useState([]);
+  const [dbRocketOffers, setDbRocketOffers] = useState([]);
+  const [dbUsers, setDbUsers] = useState([]);
+  const [dbMerchants, setDbMerchants] = useState([]);
+  const [dbComplaints, setDbComplaints] = useState([]);
+  const [dbReviews, setDbReviews] = useState([]);
+  const [dbAuditLogs, setDbAuditLogs] = useState([]);
+  const [priceAlerts, setPriceAlerts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+
   useEffect(() => {
     async function loadBackendData() {
-      const dbOffers = await OfferMatrixAPI.getOffers();
-      if (dbOffers && Array.isArray(dbOffers) && dbOffers.length > 0) {
-        const fp = dbOffers.filter(o => o.platform === 'foodpanda');
-        const fi = dbOffers.filter(o => o.platform === 'foodi');
-        const pt = dbOffers.filter(o => o.platform === 'pathao_food' || o.platform === 'pathao');
-        const ub = dbOffers.filter(o => o.platform === 'uber');
-        const ob = dbOffers.filter(o => o.platform === 'obhai');
-        const idr = dbOffers.filter(o => o.platform === 'indrive' || o.platform === 'indriver');
-        if (fp.length > 0) setFoodpandaOffers(fp);
-        if (fi.length > 0) setFoodiOffers(fi);
-        if (pt.length > 0) setPathaoOffers(pt);
-        if (ub.length > 0) setUberOffers(ub);
-        if (ob.length > 0) setObhaiOffers(ob);
-        if (idr.length > 0) setIndriverOffers(idr);
+      setIsLoading(true);
+      setApiError(null);
+      try {
+        const [
+          offersRes,
+          foodDealsRes,
+          rideDealsRes,
+          skincareDealsRes,
+          couponsRes,
+          bankOffersRes,
+          bkashRes,
+          nagadRes,
+          rocketRes,
+          usersRes,
+          merchantsRes,
+          complaintsRes,
+          reviewsRes,
+          auditLogsRes
+        ] = await Promise.all([
+          OfferMatrixAPI.getOffers(),
+          OfferMatrixAPI.getFoodDeals(),
+          OfferMatrixAPI.getRideDeals(),
+          OfferMatrixAPI.getSkincareDeals(),
+          OfferMatrixAPI.getCoupons(),
+          OfferMatrixAPI.getBankOffers(),
+          OfferMatrixAPI.getBkashOffers(),
+          OfferMatrixAPI.getNagadOffers(),
+          OfferMatrixAPI.getRocketOffers(),
+          OfferMatrixAPI.getUsers(),
+          OfferMatrixAPI.getMerchants(),
+          OfferMatrixAPI.getComplaints(),
+          OfferMatrixAPI.getReviews(),
+          OfferMatrixAPI.getAuditLogs()
+        ]);
+
+        if (offersRes && Array.isArray(offersRes) && offersRes.length > 0) {
+          const fp = offersRes.filter(o => o.platform === 'foodpanda');
+          const fi = offersRes.filter(o => o.platform === 'foodi');
+          const pt = offersRes.filter(o => o.platform === 'pathao_food' || o.platform === 'pathao');
+          const ub = offersRes.filter(o => o.platform === 'uber');
+          const ob = offersRes.filter(o => o.platform === 'obhai');
+          const idr = offersRes.filter(o => o.platform === 'indrive' || o.platform === 'indriver');
+          if (fp.length > 0) setFoodpandaOffers(fp);
+          if (fi.length > 0) setFoodiOffers(fi);
+          if (pt.length > 0) setPathaoOffers(pt);
+          if (ub.length > 0) setUberOffers(ub);
+          if (ob.length > 0) setObhaiOffers(ob);
+          if (idr.length > 0) setIndriverOffers(idr);
+        }
+
+        if (foodDealsRes && Array.isArray(foodDealsRes)) setDbFoodDeals(foodDealsRes);
+        if (rideDealsRes && Array.isArray(rideDealsRes)) setDbRideDeals(rideDealsRes);
+        if (skincareDealsRes && Array.isArray(skincareDealsRes)) setDbSkincareDeals(skincareDealsRes);
+        if (couponsRes && Array.isArray(couponsRes)) setDbCoupons(couponsRes);
+        if (bankOffersRes && Array.isArray(bankOffersRes)) setDbBankOffers(bankOffersRes);
+        if (bkashRes && Array.isArray(bkashRes)) setDbBkashOffers(bkashRes);
+        if (nagadRes && Array.isArray(nagadRes)) setDbNagadOffers(nagadRes);
+        if (rocketRes && Array.isArray(rocketRes)) setDbRocketOffers(rocketRes);
+        if (usersRes && Array.isArray(usersRes)) setDbUsers(usersRes);
+        if (merchantsRes && Array.isArray(merchantsRes)) setDbMerchants(merchantsRes);
+        if (complaintsRes && Array.isArray(complaintsRes)) setDbComplaints(complaintsRes);
+        if (reviewsRes && Array.isArray(reviewsRes)) setDbReviews(reviewsRes);
+        if (auditLogsRes && Array.isArray(auditLogsRes)) setDbAuditLogs(auditLogsRes);
+
+        // Saved deals for default user
+        const savedRes = await OfferMatrixAPI.getSavedDeals('usr-nusrat');
+        if (savedRes && Array.isArray(savedRes) && savedRes.length > 0) {
+          setSavedDeals(savedRes);
+        }
+
+        const alertsRes = await OfferMatrixAPI.getPriceAlerts('usr-nusrat');
+        if (alertsRes && Array.isArray(alertsRes)) setPriceAlerts(alertsRes);
+
+        const notifsRes = await OfferMatrixAPI.getNotifications('usr-nusrat');
+        if (notifsRes && Array.isArray(notifsRes)) setNotifications(notifsRes);
+
+      } catch (err) {
+        console.warn('API load error:', err);
+        setApiError('Unable to sync with live OfferMatrix PostgreSQL service.');
+      } finally {
+        setIsLoading(false);
       }
     }
     loadBackendData();
@@ -203,8 +290,47 @@ export default function App() {
     console.log('Order completed:', orderInfo);
   };
 
+  const allDbDeals = [
+    ...dbFoodDeals.map(d => ({
+      ...d,
+      category: 'food',
+      providers: [
+        { name: 'FoodPanda', price: d.bestPrice, time: '20-30 min', isBest: true },
+        { name: 'Pathao Food', price: Math.round(d.bestPrice * 1.1), time: '25-35 min' }
+      ]
+    })),
+    ...dbRideDeals.map(d => ({
+      ...d,
+      category: 'rides',
+      bestPrice: d.cheapestPrice,
+      providers: [
+        { name: 'Uber', price: d.cheapestPrice, time: '15 min', isBest: true },
+        { name: 'Pathao', price: Math.round(d.cheapestPrice * 1.15), time: '18 min' }
+      ]
+    })),
+    ...dbSkincareDeals.map(d => ({
+      ...d,
+      category: 'skincare',
+      providers: [
+        { name: 'Choice Legacy', price: d.bestPrice, isBest: true },
+        { name: 'Kirei', price: Math.round(d.bestPrice * 1.08) }
+      ]
+    }))
+  ];
+
   return (
     <div className="app-root">
+      {isLoading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          background: 'linear-gradient(90deg, #ff2b70, #a855f7, #10b981)',
+          height: '3px'
+        }} />
+      )}
       {/* Choice Legacy Store View */}
       {selectedCategory === 'choice_legacy' || activeView === 'choice_legacy' ? (
         <ChoiceLegacyPage
@@ -328,6 +454,16 @@ export default function App() {
           setObhaiOffers={setObhaiOffers}
           indriverOffers={indriverOffers}
           setIndriverOffers={setIndriverOffers}
+          dbUsers={dbUsers}
+          dbMerchants={dbMerchants}
+          dbComplaints={dbComplaints}
+          dbReviews={dbReviews}
+          dbAuditLogs={dbAuditLogs}
+          dbCoupons={dbCoupons}
+          dbBankOffers={dbBankOffers}
+          dbBkashOffers={dbBkashOffers}
+          dbNagadOffers={dbNagadOffers}
+          dbRocketOffers={dbRocketOffers}
         />
       ) : activeView === 'dashboard' ? (
         <UserDashboard
@@ -337,6 +473,13 @@ export default function App() {
           foodpandaOffers={foodpandaOffers}
           foodiOffers={foodiOffers}
           pathaoOffers={pathaoOffers}
+          dbFoodDeals={dbFoodDeals}
+          dbRideDeals={dbRideDeals}
+          dbSkincareDeals={dbSkincareDeals}
+          dbComplaints={dbComplaints}
+          dbReviews={dbReviews}
+          priceAlerts={priceAlerts}
+          notifications={notifications}
           onOpenSaved={() => setIsSavedModalOpen(true)}
           onOpenDealDetail={(deal) => setActiveDealDetail(deal)}
           cartCount={cartItems.length}
@@ -442,6 +585,18 @@ export default function App() {
               onToast={triggerToast}
               onOpenAuth={() => setIsAuthModalOpen(true)}
             />
+
+            <div id="all-deals-grid">
+              <AllDealsGrid
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                searchQuery={searchQuery}
+                savedDeals={savedDeals}
+                toggleSaveDeal={toggleSaveDeal}
+                onOpenDealDetail={(deal) => setActiveDealDetail(deal)}
+                deals={allDbDeals}
+              />
+            </div>
           </main>
 
           {/* Dark Footer matching Image 5 */}
