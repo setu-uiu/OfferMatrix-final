@@ -317,7 +317,7 @@ export default function ObhaiPage({ onBack, onToast, onAddToCart, offers = [] })
               <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', height: '420px', border: '3px solid #fbbf24', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
                 <iframe
                   title="OBHAI Live Dhaka Google Map"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14604.811559132174!2d90.407421!3d23.780887!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m3!2sGulshan%2C%20Dhaka!5e0!3m2!1sen!2sbd!4v1700000000000!5m2!1sen!2sbd"
+                  src="https://maps.google.com/maps?q=Gulshan,+Dhaka,+Bangladesh&t=&z=14&ie=UTF8&iwloc=&output=embed"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}

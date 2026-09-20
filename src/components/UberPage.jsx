@@ -415,7 +415,7 @@ export default function UberPage({ onBack, onToast, onAddToCart, offers = [] }) 
             <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', height: '440px', border: '2px solid #000000', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
               <iframe
                 title="Dhaka Live Uber Route Google Map"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14602.700302251347!2d90.399581!3d23.7946925!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m3!2sBanani%2C%20Dhaka!5e0!3m2!1sen!2sbd!4v1700000000000!5m2!1sen!2sbd"
+                src="https://maps.google.com/maps?q=Banani,+Dhaka,+Bangladesh&t=&z=14&ie=UTF8&iwloc=&output=embed"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
