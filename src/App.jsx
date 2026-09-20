@@ -421,6 +421,7 @@ export default function App() {
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
+          onOpenCart={() => setIsBasketOpen(true)}
         />
       ) : selectedCategory === 'kirei' || activeView === 'kirei' ? (
         <KireiPage
@@ -432,6 +433,7 @@ export default function App() {
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
+          onOpenCart={() => setIsBasketOpen(true)}
         />
       ) : selectedCategory === 'makeup_chari' || activeView === 'makeup_chari' ? (
         <MakeupChariPage
@@ -443,6 +445,7 @@ export default function App() {
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
+          onOpenCart={() => setIsBasketOpen(true)}
         />
       ) : selectedCategory === 'foodpanda' || activeView === 'foodpanda' ? (
         <FoodpandaPage
@@ -455,6 +458,7 @@ export default function App() {
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
+          onOpenCart={() => setIsBasketOpen(true)}
         />
       ) : selectedCategory === 'foodi' || activeView === 'foodi' ? (
         <FoodiPage
@@ -467,6 +471,7 @@ export default function App() {
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
+          onOpenCart={() => setIsBasketOpen(true)}
         />
       ) : selectedCategory === 'pathao' || activeView === 'pathao' ? (
         <PathaoPage
@@ -479,6 +484,7 @@ export default function App() {
           }}
           onToast={triggerToast}
           onAddToCart={handleAddToCart}
+          onOpenCart={() => setIsBasketOpen(true)}
         />
       ) : selectedCategory === 'uber' || activeView === 'uber' ? (
         <UberPage

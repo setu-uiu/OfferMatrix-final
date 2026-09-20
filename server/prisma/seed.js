@@ -146,6 +146,71 @@ async function main() {
       rating: 4.9,
       reviewsCount: 980,
       description: 'Charcoal grilled beef patty with melt cheese & seasoned fries.'
+    },
+    {
+      id: 'fd-4',
+      title: 'Mutton Kacchi Biryani Full',
+      restaurant: "Sultan's Dine",
+      bestPrice: 380,
+      originalPrice: 480,
+      savings: 100,
+      tag: 'Best Seller',
+      image: '/assets/biryani.jpg',
+      rating: 4.9,
+      reviewsCount: 1850,
+      description: 'Rich, aromatic mutton kacchi biryani topped with fried onions & boiled egg.'
+    },
+    {
+      id: 'fd-5',
+      title: 'Morog Polao Special Combo',
+      restaurant: 'Star Kabab',
+      bestPrice: 260,
+      originalPrice: 340,
+      savings: 80,
+      tag: 'Traditional Taste',
+      image: 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?auto=format&fit=crop&w=600&q=80',
+      rating: 4.8,
+      reviewsCount: 1240,
+      description: 'Traditional Dhakaiya Morog Polao served with borhani and salad.'
+    },
+    {
+      id: 'fd-6',
+      title: 'Beef Bhuna Khichuri',
+      restaurant: 'Ghoroa Restaurant',
+      bestPrice: 220,
+      originalPrice: 290,
+      savings: 70,
+      tag: 'Rainy Day Special',
+      image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80',
+      rating: 4.7,
+      reviewsCount: 920,
+      description: 'Comforting bhuna khichuri with tender spicy beef bhuna.'
+    },
+    {
+      id: 'fd-7',
+      title: 'BBQ Chicken Pizza (Medium)',
+      restaurant: 'PizzaBurg',
+      bestPrice: 480,
+      originalPrice: 650,
+      savings: 170,
+      tag: 'Cheesy Delight',
+      image: '/assets/pizza.jpg',
+      rating: 4.8,
+      reviewsCount: 1560,
+      description: 'Loaded with smoky BBQ chicken bits, capsicum, onion, and extra cheese.'
+    },
+    {
+      id: 'fd-8',
+      title: 'Crispy Fried Chicken (4 pcs)',
+      restaurant: 'KFC Direct',
+      bestPrice: 390,
+      originalPrice: 500,
+      savings: 110,
+      tag: 'Extra Crunchy',
+      image: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=600&q=80',
+      rating: 4.8,
+      reviewsCount: 2100,
+      description: 'Hot & crispy fried chicken pieces with dip sauce.'
     }
   ];
 

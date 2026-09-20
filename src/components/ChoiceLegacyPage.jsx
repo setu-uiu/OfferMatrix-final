@@ -5,7 +5,7 @@ import {
   ShieldCheck, Heart, Tag, Sparkle
 } from 'lucide-react';
 
-export default function ChoiceLegacyPage({ onBack, onToast, onAddToCart }) {
+export default function ChoiceLegacyPage({ onBack, onToast, onAddToCart, onOpenCart }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [heroSlide, setHeroSlide] = useState(0);
@@ -296,11 +296,24 @@ export default function ChoiceLegacyPage({ onBack, onToast, onAddToCart }) {
             </button>
             
             <button 
-              onClick={() => onToast('Choice Legacy Cart opened')}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: '#e11d48', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
+              onClick={() => onOpenCart ? onOpenCart() : onToast('Choice Legacy Basket opened')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'linear-gradient(135deg, #fb7185, #e11d48)',
+                color: '#ffffff',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '99px',
+                fontWeight: 800,
+                fontSize: '13.5px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(225, 29, 72, 0.25)'
+              }}
             >
-              <ShoppingBag size={18} color="#e11d48" />
-              <span>Cart</span>
+              <ShoppingBag size={16} color="#fff" />
+              <span>View Basket</span>
             </button>
 
             {/* Social Action Icons */}

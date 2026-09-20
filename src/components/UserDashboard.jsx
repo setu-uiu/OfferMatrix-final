@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Percent, Search, Bell, Heart, User, LayoutDashboard, Utensils,
   Car, Sparkles, Package, ShieldAlert, Wallet, CreditCard, Gift,
-  Settings, HelpCircle, LogOut, ChevronDown,
+  Settings, HelpCircle, LogOut, ChevronDown, ShoppingBag,
   Tag, Zap, ArrowLeft, RefreshCw, Star, Clock, MapPin
 } from 'lucide-react';
 
@@ -1936,6 +1936,17 @@ export default function UserDashboard({
               >
                 <Sparkles size={18} color={activeTab === 'skincare' ? '#e06666' : '#3b82f6'} />
                 <span>Skincare</span>
+              </li>
+              <li
+                className={`sidebar-menu-item ${activeTab === 'basket' ? 'active' : ''}`}
+                onClick={() => {
+                  if (onOpenCart) onOpenCart();
+                  else if (onToast) onToast('Basket opened');
+                }}
+              >
+                <ShoppingBag size={18} color="#ec4899" />
+                <span>Basket</span>
+                {cartCount > 0 && <span className="sidebar-badge badge-pink">{cartCount}</span>}
               </li>
               <li
                 className={`sidebar-menu-item ${activeTab === 'orders' ? (activeCategoryMode === 'food' ? 'active-food' : activeCategoryMode === 'ride' ? 'active-ride' : activeCategoryMode === 'skincare' ? 'active-skincare' : 'active') : ''}`}

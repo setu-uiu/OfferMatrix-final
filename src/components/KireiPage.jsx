@@ -5,7 +5,7 @@ import {
   ShieldCheck, Truck, Percent, Calendar
 } from 'lucide-react';
 
-export default function KireiPage({ onBack, onToast, onAddToCart }) {
+export default function KireiPage({ onBack, onToast, onAddToCart, onOpenCart }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
@@ -261,9 +261,28 @@ export default function KireiPage({ onBack, onToast, onAddToCart }) {
             </div>
 
             {/* Right Wishlist, Cart & Profile Icons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <button
+                onClick={() => onOpenCart ? onOpenCart() : onToast('Opened Kirei Basket')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#e11d48',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '7px 15px',
+                  borderRadius: '8px',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(225, 29, 72, 0.25)'
+                }}
+              >
+                <ShoppingBag size={16} color="#fff" />
+                <span>View Basket</span>
+              </button>
               <Heart size={20} color="#334155" style={{ cursor: 'pointer' }} onClick={() => onToast('Saved to Kirei wishlist')} />
-              <ShoppingBag size={20} color="#334155" style={{ cursor: 'pointer' }} onClick={() => onToast('Opened Kirei cart')} />
               <User size={20} color="#334155" style={{ cursor: 'pointer' }} onClick={() => onToast('Kirei Account Details')} />
             </div>
           </div>

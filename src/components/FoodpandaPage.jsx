@@ -4,7 +4,7 @@ import {
   Clock, MapPin, Globe, X, MessageCircle, Send, Sparkles, Percent, Tag, ShieldCheck, Check
 } from 'lucide-react';
 
-export default function FoodpandaPage({ onBack, onToast, onAddToCart, offers = [] }) {
+export default function FoodpandaPage({ onBack, onToast, onAddToCart, onOpenCart, offers = [] }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSort, setSelectedSort] = useState('relevance'); // 'relevance', 'fastest', 'distance', 'rating'
   const [selectedCuisine, setSelectedCuisine] = useState('all');
@@ -377,12 +377,27 @@ export default function FoodpandaPage({ onBack, onToast, onAddToCart, offers = [
 
             <Heart size={20} color="#333" style={{ cursor: 'pointer' }} onClick={() => onToast(`You have ${favoriteIds.length} saved favourite restaurants`)} />
 
-            <div 
-              onClick={() => onToast('Opened Foodpanda Basket')} 
-              style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#f7f7f7', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}
+            <button 
+              onClick={() => onOpenCart ? onOpenCart() : onToast('Opened Foodpanda Basket')} 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: '#d70f64',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '99px',
+                padding: '8px 16px',
+                fontWeight: 800,
+                fontSize: '13px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(215, 15, 100, 0.25)'
+              }}
+              title="View Basket"
             >
-              <ShoppingBag size={18} color="#333" />
-            </div>
+              <ShoppingBag size={16} color="#fff" />
+              <span>View Basket</span>
+            </button>
           </div>
         </div>
 

@@ -4,7 +4,7 @@ import {
   ShieldCheck, Truck, Headphones, Award, Phone, Mail, MessageCircle, Star, Plus, Minus
 } from 'lucide-react';
 
-export default function MakeupChariPage({ onBack, onToast, onAddToCart }) {
+export default function MakeupChariPage({ onBack, onToast, onAddToCart, onOpenCart }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [wishlist, setWishlist] = useState([]);
   const [quantities, setQuantities] = useState({});
@@ -220,26 +220,26 @@ export default function MakeupChariPage({ onBack, onToast, onAddToCart }) {
               <span>LOGIN / REGISTER</span>
             </button>
 
-            <div
+            <button
               style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '50%',
-                background: '#7e22ce',
-                color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                cursor: 'pointer'
+                gap: '6px',
+                background: '#7e22ce',
+                color: '#ffffff',
+                border: 'none',
+                padding: '9px 18px',
+                borderRadius: '24px',
+                fontWeight: '800',
+                fontSize: '12.5px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(126, 34, 206, 0.3)'
               }}
-              onClick={() => { if (onToast) onToast('Cart Opened'); }}
+              onClick={() => { if (onOpenCart) onOpenCart(); else if (onToast) onToast('Cart Opened'); }}
             >
-              <ShoppingBag size={20} />
-              <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: '#ec4899', color: '#ffffff', fontSize: '11px', fontWeight: '800', width: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                0
-              </span>
-            </div>
+              <ShoppingBag size={16} />
+              <span>VIEW BASKET</span>
+            </button>
           </div>
         </div>
 

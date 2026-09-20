@@ -5,7 +5,7 @@ import {
   Car, Bike, Package, CreditCard, UtensilsCrossed, Shield, Download, Zap
 } from 'lucide-react';
 
-export default function PathaoPage({ onBack, onToast, onAddToCart, offers = [] }) {
+export default function PathaoPage({ onBack, onToast, onAddToCart, onOpenCart, offers = [] }) {
   const [activeTab, setActiveTab] = useState('bike'); // 'bike', 'car', 'food', 'parcel', 'pay'
   const [lang, setLang] = useState('bn'); // 'bn' or 'en'
 

@@ -4,7 +4,7 @@ import {
   MessageCircle, Send, Sparkles, Percent, Tag, ShieldCheck, Check, Navigation, Phone, Smartphone, ChevronRight
 } from 'lucide-react';
 
-export default function FoodiPage({ onBack, onToast, onAddToCart, offers = [] }) {
+export default function FoodiPage({ onBack, onToast, onAddToCart, onOpenCart, offers = [] }) {
   const [locationInput, setLocationInput] = useState('');
   const [activeCity, setActiveCity] = useState('Dhaka');
 
@@ -182,13 +182,27 @@ export default function FoodiPage({ onBack, onToast, onAddToCart, offers = [] })
           </div>
 
           {/* Right Header Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div 
-              onClick={() => onToast('Foodi Cart is empty')}
-              style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              onClick={() => onOpenCart ? onOpenCart() : onToast('Opened Foodi Basket')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: '#e11d48',
+                color: '#ffffff',
+                border: 'none',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                fontWeight: 800,
+                fontSize: '14px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(225, 29, 72, 0.25)'
+              }}
             >
-              <ShoppingBag size={18} color="#475569" />
-            </div>
+              <ShoppingBag size={16} color="#fff" />
+              <span>View Basket</span>
+            </button>
 
             <button
               onClick={() => onToast('Opened Foodi Sign In')}

@@ -228,6 +228,103 @@ export const ALL_DEALS = [
     reviewsCount: 980
   },
   {
+    id: 'deal-11',
+    title: 'Mutton Kacchi Biryani Full',
+    category: 'food',
+    bestPrice: 380,
+    originalPrice: 480,
+    savings: 100,
+    tag: 'Best Seller',
+    image: '/assets/biryani.jpg',
+    providers: [
+      { name: 'Sultan\'s Dine', price: 380, time: '20-30 min', isBest: true },
+      { name: 'Kacchi Bhai', price: 420, time: '25-35 min' },
+      { name: 'Pathao Food', price: 440, time: '30-40 min' }
+    ],
+    rating: 4.9,
+    reviewsCount: 1850
+  },
+  {
+    id: 'deal-12',
+    title: 'Morog Polao Special Combo',
+    category: 'food',
+    bestPrice: 260,
+    originalPrice: 340,
+    savings: 80,
+    tag: 'Traditional Taste',
+    image: 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?auto=format&fit=crop&w=600&q=80',
+    providers: [
+      { name: 'Star Kabab', price: 260, time: '15-25 min', isBest: true },
+      { name: 'FoodPanda', price: 280, time: '20-30 min' }
+    ],
+    rating: 4.8,
+    reviewsCount: 1240
+  },
+  {
+    id: 'deal-13',
+    title: 'Beef Bhuna Khichuri',
+    category: 'food',
+    bestPrice: 220,
+    originalPrice: 290,
+    savings: 70,
+    tag: 'Rainy Day Special',
+    image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80',
+    providers: [
+      { name: 'Ghoroa Restaurant', price: 220, time: '20-30 min', isBest: true },
+      { name: 'Foodi', price: 240, time: '25-35 min' }
+    ],
+    rating: 4.7,
+    reviewsCount: 920
+  },
+  {
+    id: 'deal-14',
+    title: 'BBQ Chicken Pizza (Medium)',
+    category: 'food',
+    bestPrice: 480,
+    originalPrice: 650,
+    savings: 170,
+    tag: 'Cheesy Delight',
+    image: '/assets/pizza.jpg',
+    providers: [
+      { name: 'PizzaBurg', price: 480, time: '25-35 min', isBest: true },
+      { name: 'FoodPanda', price: 510, time: '30-40 min' }
+    ],
+    rating: 4.8,
+    reviewsCount: 1560
+  },
+  {
+    id: 'deal-15',
+    title: 'Crispy Fried Chicken (4 pcs)',
+    category: 'food',
+    bestPrice: 390,
+    originalPrice: 500,
+    savings: 110,
+    tag: 'Extra Crunchy',
+    image: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=600&q=80',
+    providers: [
+      { name: 'KFC Direct', price: 390, time: '15-25 min', isBest: true },
+      { name: 'Pathao Food', price: 410, time: '20-30 min' }
+    ],
+    rating: 4.8,
+    reviewsCount: 2100
+  },
+  {
+    id: 'deal-16',
+    title: 'Creamy Alfredo Pasta',
+    category: 'food',
+    bestPrice: 350,
+    originalPrice: 460,
+    savings: 110,
+    tag: 'Italian Special',
+    image: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281270?auto=format&fit=crop&w=600&q=80',
+    providers: [
+      { name: 'Madchef', price: 350, time: '20-30 min', isBest: true },
+      { name: 'FoodPanda', price: 370, time: '25-35 min' }
+    ],
+    rating: 4.7,
+    reviewsCount: 740
+  },
+  {
     id: 'deal-6',
     title: 'HYALURONIC ACID Hydrating Cream',
     category: 'skincare',
