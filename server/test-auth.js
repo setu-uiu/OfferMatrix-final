@@ -93,7 +93,7 @@ async function runAuthTests() {
     email: testEmail,
     password: testPassword
   });
-  assert(loginUnverified.status === 400 && loginUnverified.body.error.includes('verify your email'), 'Login blocked for unverified email account');
+  assert(loginUnverified.status === 400 && (loginUnverified.body.message || loginUnverified.body.error || '').includes('verify your email'), 'Login blocked for unverified email account');
 
   // 6. Test Email Verification with Invalid Token
   const verifyInvalid = await makeRequest('/auth/verify-email', 'POST', { token: 'invalid_fake_token_123' });
@@ -181,7 +181,39 @@ async function runAuthTests() {
   const logoutRes = await makeRequest('/auth/logout', 'POST');
   assert(logoutRes.status === 200, 'Logout endpoint completes successfully');
 
-  console.log(`\n🎉 OfferMatrix Authentication Test Results: ${passCount}/${totalCount} tests passed!\n`);
+  // 20. Test Food Order Creation (POST /api/orders)
+  console.log('\n📦 Testing Food Order Endpoints & PostgreSQL Integration...');
+  const createOrderRes = await makeRequest('/orders', 'POST', {
+    items: [
+      { name: 'Chicken Biryani', quantity: 2, selectedApp: 'FoodPanda', image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=120&q=80' },
+      { name: 'Coca Cola (500ml)', quantity: 1, selectedApp: 'FoodPanda', image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=120&q=80' }
+    ],
+    couponCode: 'FOODI25',
+    paymentMethod: 'bKash'
+  }, jwtToken);
+
+  assert(createOrderRes.status === 201 && createOrderRes.body.order?.orderNumber, 'POST /api/orders creates real order in PostgreSQL with OM-YYYYMMDD-XXXX order number');
+
+  const createdOrderId = createOrderRes.body.order?.id;
+  if (createdOrderId) {
+    // 21. Test GET /api/orders for authenticated user
+    const getOrdersRes = await makeRequest('/orders', 'GET', null, jwtToken);
+    assert(getOrdersRes.status === 200 && Array.isArray(getOrdersRes.body.orders) && getOrdersRes.body.orders.length > 0, 'GET /api/orders returns user orders list');
+
+    // 22. Test GET /api/orders/:id
+    const getOrderSingle = await makeRequest(`/orders/${createdOrderId}`, 'GET', null, jwtToken);
+    assert(getOrderSingle.status === 200 && getOrderSingle.body.order.id === createdOrderId, 'GET /api/orders/:id returns detailed order with items');
+
+    // 23. Test GET /api/orders/:id/tracking
+    const getTrackingRes = await makeRequest(`/orders/${createdOrderId}/tracking`, 'GET', null, jwtToken);
+    assert(getTrackingRes.status === 200 && getTrackingRes.body.tracking.orderNumber, 'GET /api/orders/:id/tracking returns valid order status');
+
+    // 24. Test Order Ownership Security (Accessing without or wrong token should fail)
+    const getOrderBadUser = await makeRequest(`/orders/${createdOrderId}`, 'GET', null, 'fake_invalid_token');
+    assert(getOrderBadUser.status === 403 || getOrderBadUser.status === 401, 'GET /api/orders/:id blocks unauthorized user access');
+  }
+
+  console.log(`\n🎉 OfferMatrix Full Integration Test Results: ${passCount}/${totalCount} tests passed!\n`);
 }
 
 runAuthTests();

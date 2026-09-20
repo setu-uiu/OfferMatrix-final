@@ -192,6 +192,10 @@ export default function App() {
           const meRes = await OfferMatrixAPI.getMe();
           if (meRes && meRes.id && !meRes.error) {
             setCurrentUser(meRes);
+            const ordersRes = await OfferMatrixAPI.getOrders();
+            if (ordersRes && ordersRes.success && Array.isArray(ordersRes.orders)) {
+              setUserOrders(ordersRes.orders);
+            }
           } else {
             localStorage.removeItem('offermatrix_token');
           }
@@ -231,6 +235,7 @@ export default function App() {
 
   const handleLoginSuccess = (userData) => {
     setCurrentUser(userData);
+    loadUserOrders();
     if (userData?.role === 'admin') {
       setActiveView('admin');
       triggerToast('Welcome Back, Admin! Super Admin Dashboard loaded 👑');
@@ -245,6 +250,8 @@ export default function App() {
     } catch (e) {}
     localStorage.removeItem('offermatrix_token');
     setCurrentUser(null);
+    setUserOrders([]);
+    setSelectedOrder(null);
     setActiveView('landing');
     setSelectedCategory('all');
     setIsBasketOpen(false);
@@ -311,13 +318,55 @@ export default function App() {
     triggerToast('Item removed from basket');
   };
 
+  // User Orders State
+  const [userOrders, setUserOrders] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const loadUserOrders = async () => {
+    const token = localStorage.getItem('offermatrix_token');
+    if (!token) return;
+    const res = await OfferMatrixAPI.getOrders();
+    if (res && res.success && Array.isArray(res.orders)) {
+      setUserOrders(res.orders);
+    }
+  };
+
   const handleClearCart = () => {
     setCartItems([]);
   };
 
-  const handlePlaceOrder = (orderInfo) => {
-    // Order successfully recorded
-    console.log('Order completed:', orderInfo);
+  const handlePlaceOrder = async (orderInfo) => {
+    const token = localStorage.getItem('offermatrix_token');
+    if (!currentUser && !token) {
+      triggerToast('Please log in to place your order');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    if (cartItems.length === 0) return;
+
+    const payload = {
+      items: cartItems.map(item => ({
+        foodDealId: item.id || item.foodDealId,
+        name: item.brand || item.title || item.name,
+        quantity: item.qty || 1,
+        unitPrice: item.appPrice || item.currPrice || item.price || item.bestPrice,
+        image: item.img || item.image,
+        selectedApp: item.selectedApp || item.storeTag || 'FoodPanda'
+      })),
+      paymentMethod: orderInfo?.paymentMethod || 'Cash on Delivery'
+    };
+
+    const response = await OfferMatrixAPI.createOrder(payload);
+    if (response && response.success && response.order) {
+      setCartItems([]);
+      setUserOrders(prev => [response.order, ...prev]);
+      setSelectedOrder(response.order);
+      setActiveView('dashboard');
+      triggerToast(`🎉 Order ${response.order.orderNumber} placed successfully!`);
+    } else {
+      triggerToast(`Error placing order: ${response?.error || 'Failed to complete order'}`);
+    }
   };
 
   const allDbDeals = [
@@ -498,6 +547,11 @@ export default function App() {
       ) : activeView === 'dashboard' ? (
         <UserDashboard
           currentUser={currentUser}
+          userOrders={userOrders}
+          setUserOrders={setUserOrders}
+          selectedOrder={selectedOrder}
+          setSelectedOrder={setSelectedOrder}
+          onRefreshOrders={loadUserOrders}
           onLogout={handleLogout}
           onToast={triggerToast}
           foodpandaOffers={foodpandaOffers}

@@ -61,6 +61,13 @@ export const OfferMatrixAPI = {
   createComplaint: (data) => fetchJson('/complaints', { method: 'POST', body: JSON.stringify(data) }),
   getReviews: () => fetchJson('/reviews'),
   getNotifications: (userId) => fetchJson(`/notifications/${userId}`),
-  getAuditLogs: () => fetchJson('/audit-logs')
+  getAuditLogs: () => fetchJson('/audit-logs'),
+
+  // Food Orders API
+  getOrders: () => fetchJson('/orders'),
+  getOrderById: (id) => fetchJson(`/orders/${id}`),
+  createOrder: (orderData) => fetchJson('/orders', { method: 'POST', body: JSON.stringify(orderData) }),
+  cancelOrder: (id) => fetchJson(`/orders/${id}/cancel`, { method: 'POST' }),
+  getOrderTracking: (id) => fetchJson(`/orders/${id}/tracking`)
 };
 

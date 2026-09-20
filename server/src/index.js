@@ -35,6 +35,16 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Root Endpoint
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    message: '🚀 OfferMatrix API Backend is running!',
+    health: '/api/health',
+    endpoints: '/api/offers, /api/merchants, /api/deals/food, /api/auth/me'
+  });
+});
+
 // Resend Email Delivery Utility
 async function sendEmail({ to, subject, html }) {
   if (resend && process.env.RESEND_API_KEY && !process.env.RESEND_API_KEY.includes('re_123456789')) {
@@ -532,6 +542,261 @@ app.post('/api/auth/reset-password', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Server error during password reset: ' + err.message });
+  }
+});
+
+// ==================== FOOD ORDER API ROUTES ====================
+
+// Helper to generate safe unique order number (OM-YYYYMMDD-XXXX)
+async function generateUniqueOrderNumber() {
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const count = await prisma.foodOrder.count();
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+  const candidate = `OM-${dateStr}-${String(count + 1).padStart(4, '0')}`;
+  
+  const existing = await prisma.foodOrder.findUnique({ where: { orderNumber: candidate } });
+  if (existing) {
+    return `OM-${dateStr}-${randomSuffix}`;
+  }
+  return candidate;
+}
+
+// 1. Create Order (POST /api/orders)
+app.post('/api/orders', authenticateToken, async (req, res) => {
+  try {
+    const { items, couponCode, paymentMethod } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, error: 'Order must contain at least one food item' });
+    }
+
+    // Server-side price calculation & validation
+    const calculatedItems = [];
+    let serverSubtotal = 0;
+
+    for (const item of items) {
+      let unitPrice = 0;
+      let deal = null;
+
+      if (item.foodDealId) {
+        deal = await prisma.foodDeal.findUnique({ where: { id: item.foodDealId } });
+      }
+
+      if (!deal && item.name) {
+        deal = await prisma.foodDeal.findFirst({
+          where: { title: { contains: item.name, mode: 'insensitive' } }
+        });
+      }
+
+      if (deal) {
+        unitPrice = Number(deal.bestPrice);
+      } else if (item.unitPrice && Number(item.unitPrice) > 0) {
+        unitPrice = Number(item.unitPrice);
+      } else if (item.price && Number(item.price) > 0) {
+        unitPrice = Number(item.price);
+      } else {
+        unitPrice = 189.00; // Fallback safe standard price
+      }
+
+      const qty = Math.max(1, parseInt(item.quantity || item.qty || 1, 10));
+      const lineTotal = unitPrice * qty;
+      serverSubtotal += lineTotal;
+
+      calculatedItems.push({
+        foodDealId: deal?.id || item.foodDealId || null,
+        name: item.name || item.brand || item.title || deal?.title || 'Food Meal',
+        quantity: qty,
+        unitPrice: unitPrice,
+        totalPrice: lineTotal,
+        image: item.image || item.img || deal?.image || 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=120&q=80',
+        selectedApp: item.selectedApp || item.storeTag || 'FoodPanda'
+      });
+    }
+
+    // Server-side Coupon validation
+    let couponDiscount = 0;
+    if (couponCode) {
+      const validCoupon = await prisma.coupon.findUnique({ where: { code: couponCode.trim() } });
+      if (validCoupon) {
+        couponDiscount = 50.00;
+      } else {
+        const validOffer = await prisma.offer.findFirst({ where: { code: couponCode.trim(), status: 'Active' } });
+        if (validOffer) {
+          couponDiscount = 50.00;
+        }
+      }
+    }
+
+    // Server-side Payment Method Discount
+    let paymentDiscount = 0;
+    const selectedPay = paymentMethod || 'Cash on Delivery';
+    if (selectedPay === 'bKash') paymentDiscount = serverSubtotal * 0.05;
+    else if (selectedPay === 'Nagad') paymentDiscount = serverSubtotal * 0.07;
+    else if (selectedPay === 'Card' || selectedPay === 'Visa / Card') paymentDiscount = serverSubtotal * 0.10;
+
+    const deliveryFee = 30.00;
+    const totalDiscount = couponDiscount + paymentDiscount;
+    const serverTotalAmount = Math.max(0, serverSubtotal + deliveryFee - totalDiscount);
+
+    const orderNumber = await generateUniqueOrderNumber();
+
+    // Create Order inside a Prisma Transaction
+    const newOrder = await prisma.$transaction(async (tx) => {
+      const created = await tx.foodOrder.create({
+        data: {
+          orderNumber,
+          userId: req.user.userId,
+          merchantName: calculatedItems[0]?.selectedApp || 'OfferMatrix Food',
+          category: 'food',
+          status: 'CONFIRMED',
+          subtotal: serverSubtotal.toFixed(2),
+          deliveryFee: deliveryFee.toFixed(2),
+          discount: totalDiscount.toFixed(2),
+          couponCode: couponCode || null,
+          paymentMethod: selectedPay,
+          totalAmount: serverTotalAmount.toFixed(2),
+          items: {
+            create: calculatedItems.map(it => ({
+              foodDealId: it.foodDealId,
+              name: it.name,
+              quantity: it.quantity,
+              unitPrice: it.unitPrice.toFixed(2),
+              totalPrice: it.totalPrice.toFixed(2),
+              image: it.image,
+              selectedApp: it.selectedApp
+            }))
+          }
+        },
+        include: {
+          items: true,
+          deliveryPartner: true
+        }
+      });
+      return created;
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Order placed successfully!',
+      order: newOrder
+    });
+  } catch (err) {
+    console.error('Create Order Error:', err);
+    res.status(500).json({ success: false, error: 'Server error creating order: ' + err.message });
+  }
+});
+
+// 2. Get User Orders (GET /api/orders)
+app.get('/api/orders', authenticateToken, async (req, res) => {
+  try {
+    const orders = await prisma.foodOrder.findMany({
+      where: { userId: req.user.userId },
+      include: { items: true, deliveryPartner: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, orders });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error fetching orders: ' + err.message });
+  }
+});
+
+// 3. Get Single Order by ID (GET /api/orders/:id)
+app.get('/api/orders/:id', authenticateToken, async (req, res) => {
+  try {
+    const order = await prisma.foodOrder.findUnique({
+      where: { id: req.params.id },
+      include: { items: true, deliveryPartner: true }
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    if (order.userId !== req.user.userId) {
+      return res.status(403).json({ success: false, error: 'Access denied: You do not own this order' });
+    }
+
+    res.json({ success: true, order });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error fetching order: ' + err.message });
+  }
+});
+
+// 4. Cancel Order (POST /api/orders/:id/cancel)
+app.post('/api/orders/:id/cancel', authenticateToken, async (req, res) => {
+  try {
+    const order = await prisma.foodOrder.findUnique({ where: { id: req.params.id } });
+
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    if (order.userId !== req.user.userId) {
+      return res.status(403).json({ success: false, error: 'Access denied: You do not own this order' });
+    }
+
+    const uncancellableStatuses = ['DELIVERED', 'ON_THE_WAY', 'CANCELLED'];
+    if (uncancellableStatuses.includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        error: `Order cannot be cancelled because its current status is '${order.status}'`
+      });
+    }
+
+    const updatedOrder = await prisma.foodOrder.update({
+      where: { id: order.id },
+      data: { status: 'CANCELLED' },
+      include: { items: true, deliveryPartner: true }
+    });
+
+    res.json({
+      success: true,
+      message: 'Order cancelled successfully',
+      order: updatedOrder
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error cancelling order: ' + err.message });
+  }
+});
+
+// 5. Get Order Tracking (GET /api/orders/:id/tracking)
+app.get('/api/orders/:id/tracking', authenticateToken, async (req, res) => {
+  try {
+    const order = await prisma.foodOrder.findUnique({
+      where: { id: req.params.id },
+      include: { items: true, deliveryPartner: true }
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    if (order.userId !== req.user.userId) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    res.json({
+      success: true,
+      tracking: {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        merchantName: order.merchantName,
+        deliveryPartner: order.deliveryPartner ? {
+          name: order.deliveryPartner.name,
+          phone: order.deliveryPartner.phone,
+          avatar: order.deliveryPartner.avatar
+        } : null,
+        message: order.deliveryPartner
+          ? `Rider ${order.deliveryPartner.name} is handling your order.`
+          : 'Delivery partner will be assigned soon.',
+        itemsCount: order.items.length,
+        totalAmount: order.totalAmount
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error getting order tracking: ' + err.message });
   }
 });
 

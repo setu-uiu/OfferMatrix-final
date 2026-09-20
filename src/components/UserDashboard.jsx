@@ -8,6 +8,11 @@ import {
 
 export default function UserDashboard({
   currentUser,
+  userOrders = [],
+  setUserOrders,
+  selectedOrder: propSelectedOrder,
+  setSelectedOrder: propSetSelectedOrder,
+  onRefreshOrders,
   onLogout,
   onToast,
   foodpandaOffers = [],
@@ -47,7 +52,10 @@ export default function UserDashboard({
   const [copiedCoupon, setCopiedCoupon] = useState('');
   const [selectedQuickAction, setSelectedQuickAction] = useState('food');
   const [orderCategoryFilter, setOrderCategoryFilter] = useState('all');
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [localSelectedOrder, setLocalSelectedOrder] = useState(null);
+
+  const selectedOrder = propSelectedOrder || localSelectedOrder;
+  const setSelectedOrder = propSetSelectedOrder || setLocalSelectedOrder;
 
   // Interactive Ride State
   const [pickupLocation, setPickupLocation] = useState('Dhanmondi, Dhaka');
@@ -1674,193 +1682,61 @@ export default function UserDashboard({
 
   const userName = currentUser?.name || 'Meherunnesasetu7';
 
-  // Active Orders Dataset
-  const ALL_ACTIVE_ORDERS = [
-    {
-      id: 'act-1',
-      category: 'ride',
-      title: 'Pathao Ride (Dhanmondi, Dhaka to Gulshan 2, Dhaka)',
-      subtitle: 'Pathao (Regular)',
-      code: 'Order #RIDE-785954 • Just now',
-      status: 'In Transit',
-      estTotal: 'Est. Total: ৳0',
-      img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=120&q=80',
-      avatarText: 'OM',
-      bgClass: 'bg-kb',
-      summary: {
-        orderId: 'Order #RIDE-785954',
-        date: 'Placed Today • 01:15 PM',
-        type: 'ride',
-        driverName: 'Rider: Rahim',
-        driverPhone: '01712 345678',
-        riderImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80',
-        route: { pickup: 'Dhanmondi, Dhaka', drop: 'Gulshan 2, Dhaka' },
-        items: [
-          { name: 'Pathao Ride (Sedan)', qty: '12.4 km', price: '৳450', img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=80&q=80' }
-        ],
-        subtotal: '৳450',
-        deliveryFee: '৳0',
-        discount: '-৳30',
-        total: '৳420'
-      }
-    },
-    {
-      id: 'act-2',
-      category: 'ride',
-      title: 'Pathao Ride (Dhanmondi, Dhaka to Gulshan 2, Dhaka)',
-      subtitle: 'Pathao (Regular)',
-      code: 'Order #RIDE-309489 • Just now',
-      status: 'In Transit',
-      estTotal: 'Est. Total: ৳0',
-      img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=120&q=80',
-      avatarText: 'OM',
-      bgClass: 'bg-kb',
-      summary: {
-        orderId: 'Order #RIDE-309489',
-        date: 'Placed Today • 01:10 PM',
-        type: 'ride',
-        driverName: 'Rider: Rahim',
-        driverPhone: '01712 345678',
-        riderImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80',
-        route: { pickup: 'Dhanmondi, Dhaka', drop: 'Gulshan 2, Dhaka' },
-        items: [
-          { name: 'Pathao Ride (Sedan)', qty: '12.4 km', price: '৳450', img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=80&q=80' }
-        ],
-        subtotal: '৳450',
-        deliveryFee: '৳0',
-        discount: '-৳30',
-        total: '৳420'
-      }
-    },
-    {
-      id: 'act-3',
-      category: 'food',
-      title: 'Chicken Biryani + Coca Cola 500ml',
-      subtitle: 'Kacchi Bhai - Dhanmondi',
-      code: 'Order #OM-8921 • Today, 1:45 PM',
-      status: 'In Transit',
-      estTotal: 'Est. Total: ৳299',
-      img: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=120&q=80',
-      avatarText: 'KB',
-      bgClass: 'bg-kb',
-      summary: {
-        orderId: 'Order #OM123456',
-        date: 'Placed on 28 May, 2025 • 12:45 PM',
-        type: 'food',
-        driverName: 'Rider: Rahim',
-        driverPhone: '01712 345678',
-        riderImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80',
-        items: [
-          { name: 'Chicken Biryani', qty: 'x1', price: '৳189', img: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=80&q=80' },
-          { name: 'Coca Cola (500ml)', qty: 'x1', price: '৳50', img: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=80&q=80' },
-          { name: 'Green Salad', qty: 'x1', price: '৳60', img: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=80&q=80' }
-        ],
-        subtotal: '৳299',
-        deliveryFee: '৳30',
-        discount: '-৳30',
-        total: '৳299'
-      }
-    },
-    {
-      id: 'act-4',
-      category: 'skincare',
-      title: 'CeraVe Cleanser + Sunscreen SPF50',
-      subtitle: 'Beautybooth BD',
-      code: 'Order #SKIN-9921 • Today, 11:30 AM',
-      status: 'In Transit',
-      estTotal: 'Est. Total: ৳2,100',
-      img: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=120&q=80',
-      avatarText: 'BB',
-      bgClass: 'bg-bb',
-      summary: {
-        orderId: 'Order #SKIN-9921',
-        date: 'Placed on 24 Aug, 2026 • 11:30 AM',
-        type: 'skincare',
-        carrier: 'Steadfast Express',
-        trackingId: '#SF883921',
-        items: [
-          { name: 'CeraVe Hydrating Cleanser 473ml', qty: 'x1', price: '৳1,250', img: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=80&q=80' },
-          { name: 'Biore UV Sunscreen SPF50+ PA++++', qty: 'x1', price: '৳850', img: 'https://images.unsplash.com/photo-1608248597263-00de4680c74f?auto=format&fit=crop&w=80&q=80' }
-        ],
-        subtotal: '৳2,100',
-        deliveryFee: '৳0',
-        discount: '৳0',
-        total: '৳2,100'
-      }
-    }
-  ];
+  const formattedUserOrders = (userOrders || []).map(order => {
+    const rawSt = order.status || 'PENDING';
+    const firstItem = order.items?.[0];
+    const itemsTitle = order.items && order.items.length > 0 
+      ? order.items.map(i => `${i.name}${i.quantity > 1 ? ` x${i.quantity}` : ''}`).join(' + ')
+      : 'Food Order';
 
-  // Order History Dataset
-  const ALL_HISTORY_ORDERS = [
-    {
-      id: 'hist-1',
-      category: 'food',
-      title: 'Referral Reward Bonus Claimed',
-      subtitle: 'OfferMatrix Rewards',
-      date: 'Just now',
-      status: 'Completed',
-      price: '৳0',
-      avatarText: 'OM',
-      bgClass: 'bg-kb'
-    },
-    {
-      id: 'hist-2',
-      category: 'ride',
-      title: 'Pathao Car Airport Ride (Sedan)',
-      subtitle: 'Pathao Rides',
-      date: 'Yesterday, 6:30 PM',
-      status: 'Completed',
-      price: '৳450',
-      avatarText: 'PT',
-      bgClass: 'bg-pt'
-    },
-    {
-      id: 'hist-3',
-      category: 'skincare',
-      title: 'CeraVe Cleanser + Sunscreen SPF50',
-      subtitle: 'Beautybooth BD',
-      date: '24 Aug 2026',
-      status: 'Delivered',
-      price: '৳2,100',
-      avatarText: 'BB',
-      bgClass: 'bg-bb',
-      img: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=120&q=80'
-    },
-    {
-      id: 'hist-4',
-      category: 'food',
-      title: 'Cheesy Pepperoni Large + Garlic Bread',
-      subtitle: 'Pizza Hut',
-      date: '20 Aug 2026',
-      status: 'Completed',
-      price: '৳650',
-      avatarText: 'PH',
-      bgClass: 'bg-kb'
-    },
-    {
-      id: 'hist-5',
-      category: 'ride',
-      title: 'Uber Intercity Dhaka to Chattogram',
-      subtitle: 'Uber BD',
-      date: '15 Aug 2026',
-      status: 'Completed',
-      price: '৳1,850',
-      avatarText: 'UB',
-      bgClass: 'bg-pt'
-    },
-    {
-      id: 'hist-6',
-      category: 'skincare',
-      title: 'The Ordinary Niacinamide 10% 30ml',
-      subtitle: 'Cosmetics BD',
-      date: '10 Aug 2026',
-      status: 'Completed',
-      price: '৳950',
-      avatarText: 'CS',
-      bgClass: 'bg-cs',
-      img: 'https://images.unsplash.com/photo-1608248597263-00de4680c74f?auto=format&fit=crop&w=120&q=80'
-    }
-  ];
+    const formattedDateStr = order.createdAt 
+      ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+      : 'Today';
+
+    const formattedTimeStr = order.createdAt
+      ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : '';
+
+    return {
+      id: order.id,
+      orderNumber: order.orderNumber,
+      category: order.category || 'food',
+      title: itemsTitle,
+      subtitle: order.merchantName || 'OfferMatrix Food',
+      code: `Order #${order.orderNumber} • ${formattedTimeStr}`,
+      status: rawSt === 'PENDING' ? 'Pending' : rawSt === 'CONFIRMED' ? 'Confirmed' : rawSt === 'PREPARING' ? 'Preparing' : rawSt === 'ON_THE_WAY' ? 'In Transit' : rawSt === 'DELIVERED' ? 'Delivered' : rawSt,
+      rawStatus: rawSt,
+      estTotal: `Total: ৳${Number(order.totalAmount).toLocaleString()}`,
+      price: `৳${Number(order.totalAmount).toLocaleString()}`,
+      img: firstItem?.image || 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=120&q=80',
+      avatarText: order.merchantName ? order.merchantName.substring(0, 2).toUpperCase() : 'OM',
+      bgClass: 'bg-kb',
+      date: `${formattedDateStr}${formattedTimeStr ? ` • ${formattedTimeStr}` : ''}`,
+      summary: {
+        orderId: `Order #${order.orderNumber}`,
+        date: `Placed on ${formattedDateStr}${formattedTimeStr ? ` • ${formattedTimeStr}` : ''}`,
+        type: order.category || 'food',
+        rawStatus: rawSt,
+        driverName: order.deliveryPartner?.name ? `Rider: ${order.deliveryPartner.name}` : null,
+        driverPhone: order.deliveryPartner?.phone || null,
+        riderImg: order.deliveryPartner?.avatar || null,
+        items: (order.items || []).map(i => ({
+          name: i.name,
+          qty: `x${i.quantity}`,
+          price: `৳${(Number(i.unitPrice) * i.quantity).toLocaleString()}`,
+          img: i.image || 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=80&q=80'
+        })),
+        subtotal: `৳${Number(order.subtotal).toLocaleString()}`,
+        deliveryFee: `৳${Number(order.deliveryFee).toLocaleString()}`,
+        discount: `-৳${Number(order.discount).toLocaleString()}`,
+        total: `৳${Number(order.totalAmount).toLocaleString()}`,
+        paymentMethod: order.paymentMethod || 'Cash on Delivery'
+      }
+    };
+  });
+
+  const ALL_ACTIVE_ORDERS = formattedUserOrders.filter(o => o.rawStatus !== 'DELIVERED' && o.rawStatus !== 'CANCELLED');
+  const ALL_HISTORY_ORDERS = formattedUserOrders.filter(o => o.rawStatus === 'DELIVERED' || o.rawStatus === 'CANCELLED');
 
   // Filtering active orders and history by category
   const filteredActiveOrders = ALL_ACTIVE_ORDERS.filter(o =>
@@ -1872,8 +1748,11 @@ export default function UserDashboard({
   );
 
   // Active Summary Data
-  const currentSummaryOrder = selectedOrder || (filteredActiveOrders.length > 0 ? filteredActiveOrders[0] : ALL_ACTIVE_ORDERS[2]);
-  const activeSummary = currentSummaryOrder.summary;
+  const currentSummaryOrder = selectedOrder
+    ? (typeof selectedOrder.summary === 'object' ? selectedOrder : formattedUserOrders.find(o => o.id === selectedOrder.id || o.id === selectedOrder) || null)
+    : (filteredActiveOrders.length > 0 ? filteredActiveOrders[0] : (ALL_ACTIVE_ORDERS.length > 0 ? ALL_ACTIVE_ORDERS[0] : null));
+
+  const activeSummary = currentSummaryOrder ? currentSummaryOrder.summary : null;
 
   const handleCopyCode = (code) => {
     navigator.clipboard.writeText(code);
@@ -2855,34 +2734,34 @@ export default function UserDashboard({
                   </div>
                 </div>
 
-                {/* Filter Category Pills (All Orders 9, Food 3, Ride 4, Skincare 2) */}
+                {/* Filter Category Pills (All Orders, Food, Ride, Skincare) */}
                 <div className="orders-category-pills-row">
                   <button
                     className={`order-cat-pill ${orderCategoryFilter === 'all' ? 'active-pink' : ''}`}
                     onClick={() => setOrderCategoryFilter('all')}
                   >
-                    💳 All Orders <span className="order-pill-badge">9</span>
+                    💳 All Orders <span className="order-pill-badge">{formattedUserOrders.length}</span>
                   </button>
 
                   <button
                     className={`order-cat-pill ${orderCategoryFilter === 'food' ? 'active-pink' : ''}`}
                     onClick={() => setOrderCategoryFilter('food')}
                   >
-                    🍴 Food <span className="order-pill-badge">3</span>
+                    🍴 Food <span className="order-pill-badge">{formattedUserOrders.filter(o => o.category === 'food').length}</span>
                   </button>
 
                   <button
                     className={`order-cat-pill ${orderCategoryFilter === 'ride' ? 'active-pink' : ''}`}
                     onClick={() => setOrderCategoryFilter('ride')}
                   >
-                    🚗 Ride <span className="order-pill-badge">4</span>
+                    🚗 Ride <span className="order-pill-badge">{formattedUserOrders.filter(o => o.category === 'ride').length}</span>
                   </button>
 
                   <button
                     className={`order-cat-pill ${orderCategoryFilter === 'skincare' ? 'active-pink' : ''}`}
                     onClick={() => setOrderCategoryFilter('skincare')}
                   >
-                    💧 Skincare <span className="order-pill-badge">2</span>
+                    💧 Skincare <span className="order-pill-badge">{formattedUserOrders.filter(o => o.category === 'skincare').length}</span>
                   </button>
                 </div>
 
@@ -2896,44 +2775,50 @@ export default function UserDashboard({
                   </div>
 
                   <div className="active-orders-list">
-                    {filteredActiveOrders.map(order => (
-                      <div
-                        key={order.id}
-                        className={`active-order-item ${currentSummaryOrder?.id === order.id ? 'selected' : ''}`}
-                        onClick={() => setSelectedOrder(order)}
-                      >
-                        <div className="active-order-left">
-                          <div className={`order-avatar-circle ${order.bgClass}`}>
-                            {order.avatarText}
-                          </div>
-                          <div className="order-main-details">
-                            <h4 className="order-item-title">{order.title}</h4>
-                            <span className="order-item-subtitle">{order.subtitle}</span>
-                            <span className="order-item-code">{order.code}</span>
-                          </div>
-                        </div>
-
-                        <div className="active-order-right">
-                          <div className="order-thumb-wrap">
-                            <img src={order.img} alt={order.title} className="order-thumb-img" />
-                          </div>
-                          <div className="order-status-box">
-                            <span className="badge-in-transit">{order.status}</span>
-                            <span className="order-est-total">{order.estTotal}</span>
-                          </div>
-                          <button
-                            className="btn-track-outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedOrder(order);
-                              onToast(`Tracking ${order.title}...`);
-                            }}
-                          >
-                            Track →
-                          </button>
-                        </div>
+                    {filteredActiveOrders.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '24px 16px', color: '#6b7280', fontSize: '13.5px' }}>
+                        No active orders at the moment.
                       </div>
-                    ))}
+                    ) : (
+                      filteredActiveOrders.map(order => (
+                        <div
+                          key={order.id}
+                          className={`active-order-item ${currentSummaryOrder?.id === order.id ? 'selected' : ''}`}
+                          onClick={() => setSelectedOrder(order)}
+                        >
+                          <div className="active-order-left">
+                            <div className={`order-avatar-circle ${order.bgClass}`}>
+                              {order.avatarText}
+                            </div>
+                            <div className="order-main-details">
+                              <h4 className="order-item-title">{order.title}</h4>
+                              <span className="order-item-subtitle">{order.subtitle}</span>
+                              <span className="order-item-code">{order.code}</span>
+                            </div>
+                          </div>
+
+                          <div className="active-order-right">
+                            <div className="order-thumb-wrap">
+                              <img src={order.img} alt={order.title} className="order-thumb-img" />
+                            </div>
+                            <div className="order-status-box">
+                              <span className="badge-in-transit">{order.status}</span>
+                              <span className="order-est-total">{order.estTotal}</span>
+                            </div>
+                            <button
+                              className="btn-track-outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedOrder(order);
+                                onToast(`Tracking ${order.title}...`);
+                              }}
+                            >
+                              Track →
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -2941,47 +2826,53 @@ export default function UserDashboard({
                 <div className="orders-section-card">
                   <div className="orders-section-header">
                     <h3 className="orders-sec-title">Order History</h3>
-                    <span style={{ fontSize: '12px', color: '#ff2b70', fontWeight: 800 }}>6 Orders Total</span>
+                    <span style={{ fontSize: '12px', color: '#ff2b70', fontWeight: 800 }}>{filteredHistoryOrders.length} Orders Total</span>
                   </div>
 
                   <div className="order-history-list">
-                    {filteredHistoryOrders.map(item => (
-                      <div key={item.id} className="order-history-item" onClick={() => onToast(`Viewing receipt for ${item.title}`)}>
-                        <div className="history-left">
-                          {item.img ? (
-                            <img src={item.img} alt={item.title} style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }} />
-                          ) : (
-                            <div className={`order-avatar-circle ${item.bgClass}`} style={{ width: '40px', height: '40px', fontSize: '11px' }}>
-                              {item.avatarText}
+                    {filteredHistoryOrders.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '24px 16px', color: '#6b7280', fontSize: '13.5px' }}>
+                        No past order history.
+                      </div>
+                    ) : (
+                      filteredHistoryOrders.map(item => (
+                        <div key={item.id} className="order-history-item" onClick={() => onToast(`Viewing receipt for ${item.title}`)}>
+                          <div className="history-left">
+                            {item.img ? (
+                              <img src={item.img} alt={item.title} style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }} />
+                            ) : (
+                              <div className={`order-avatar-circle ${item.bgClass}`} style={{ width: '40px', height: '40px', fontSize: '11px' }}>
+                                {item.avatarText}
+                              </div>
+                            )}
+                            <div className="order-main-details">
+                              <h4 className="order-item-title" style={{ fontSize: '13.5px' }}>{item.title}</h4>
+                              <span className="order-item-subtitle">{item.subtitle}</span>
                             </div>
-                          )}
-                          <div className="order-main-details">
-                            <h4 className="order-item-title" style={{ fontSize: '13.5px' }}>{item.title}</h4>
-                            <span className="order-item-subtitle">{item.subtitle}</span>
+                          </div>
+
+                          <div className="history-center-meta">
+                            <span className="history-date">📅 {item.date}</span>
+                            <span className={item.status === 'Delivered' ? 'badge-delivered-green' : 'badge-completed'}>
+                              {item.status}
+                            </span>
+                          </div>
+
+                          <div className="history-right">
+                            <span className="history-price">{item.price}</span>
+                            <button
+                              className="btn-reorder-outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onToast(`Reordered "${item.title}"! Item added to cart.`);
+                              }}
+                            >
+                              Reorder ↺
+                            </button>
                           </div>
                         </div>
-
-                        <div className="history-center-meta">
-                          <span className="history-date">📅 {item.date}</span>
-                          <span className={item.status === 'Delivered' ? 'badge-delivered-green' : 'badge-completed'}>
-                            {item.status}
-                          </span>
-                        </div>
-
-                        <div className="history-right">
-                          <span className="history-price">{item.price}</span>
-                          <button
-                            className="btn-reorder-outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onToast(`Reordered "${item.title}"! Item added to cart.`);
-                            }}
-                          >
-                            Reorder ↺
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -3032,127 +2923,157 @@ export default function UserDashboard({
                 <div className="right-widget-card" style={{ sticky: 'top', top: '10px' }}>
                   <div className="order-summary-header">
                     <h4 className="order-summary-title">Order Summary</h4>
-                    <span className="badge-live-red">🔴 Live</span>
+                    {activeSummary && <span className="badge-live-red">🔴 Live</span>}
                   </div>
 
-                  <div className="order-summary-code">
-                    {activeSummary.orderId}
-                  </div>
-                  <div className="order-summary-date">
-                    {activeSummary.date}
-                  </div>
-
-                  {/* Stepper Progress Tracker */}
-                  <div className="order-stepper">
-                    <div className="order-stepper-line">
-                      <div className="order-stepper-line-fill" style={{ width: '50%' }}></div>
+                  {!activeSummary ? (
+                    <div style={{ textAlign: 'center', padding: '36px 16px' }}>
+                      <div style={{ fontSize: '44px', marginBottom: '12px' }}>🛍️</div>
+                      <h5 style={{ fontSize: '16px', fontWeight: 700, color: '#1f2937', margin: '0 0 6px 0' }}>No active order</h5>
+                      <p style={{ color: '#6b7280', fontSize: '13px', lineHeight: '1.5', margin: 0 }}>
+                        Your order summary will appear here after you place an order.
+                      </p>
                     </div>
+                  ) : (
+                    <>
+                      <div className="order-summary-code">
+                        {activeSummary.orderId}
+                      </div>
+                      <div className="order-summary-date">
+                        {activeSummary.date}
+                      </div>
 
-                    <div className="stepper-node active">
-                      <div className="stepper-circle">✓</div>
-                      <span className="stepper-node-label">Confirmed</span>
-                    </div>
+                      {/* Stepper Progress Tracker */}
+                      <div className="order-stepper">
+                        <div className="order-stepper-line">
+                          <div className="order-stepper-line-fill" style={{
+                            width: activeSummary.rawStatus === 'DELIVERED' ? '100%'
+                              : ['ON_THE_WAY', 'PICKED_UP'].includes(activeSummary.rawStatus) ? '75%'
+                              : ['PREPARING', 'READY_FOR_PICKUP'].includes(activeSummary.rawStatus) ? '50%' : '25%'
+                          }}></div>
+                        </div>
 
-                    <div className="stepper-node active">
-                      <div className="stepper-circle">{activeSummary.type === 'ride' ? '🚗' : activeSummary.type === 'skincare' ? '📦' : '%'}</div>
-                      <span className="stepper-node-label">{activeSummary.type === 'ride' ? 'Driver Assigned' : activeSummary.type === 'skincare' ? 'Packed' : 'Preparing'}</span>
-                    </div>
+                        <div className={`stepper-node ${activeSummary.rawStatus !== 'CANCELLED' ? 'active' : ''}`}>
+                          <div className="stepper-circle">✓</div>
+                          <span className="stepper-node-label">Confirmed</span>
+                        </div>
 
-                    <div className="stepper-node">
-                      <div className="stepper-circle">{activeSummary.type === 'ride' ? '📍' : activeSummary.type === 'skincare' ? '🚚' : '🚚'}</div>
-                      <span className="stepper-node-label">{activeSummary.type === 'ride' ? 'On the way' : activeSummary.type === 'skincare' ? 'Shipped' : 'On the way'}</span>
-                    </div>
+                        <div className={`stepper-node ${['PREPARING', 'READY_FOR_PICKUP', 'PICKED_UP', 'ON_THE_WAY', 'DELIVERED'].includes(activeSummary.rawStatus) ? 'active' : ''}`}>
+                          <div className="stepper-circle">{activeSummary.type === 'ride' ? '🚗' : activeSummary.type === 'skincare' ? '📦' : '%'}</div>
+                          <span className="stepper-node-label">{activeSummary.type === 'ride' ? 'Driver Assigned' : activeSummary.type === 'skincare' ? 'Packed' : 'Preparing'}</span>
+                        </div>
 
-                    <div className="stepper-node">
-                      <div className="stepper-circle">🎁</div>
-                      <span className="stepper-node-label">Delivered</span>
-                    </div>
-                  </div>
+                        <div className={`stepper-node ${['PICKED_UP', 'ON_THE_WAY', 'DELIVERED'].includes(activeSummary.rawStatus) ? 'active' : ''}`}>
+                          <div className="stepper-circle">{activeSummary.type === 'ride' ? '📍' : activeSummary.type === 'skincare' ? '🚚' : '🚚'}</div>
+                          <span className="stepper-node-label">{activeSummary.type === 'ride' ? 'On the way' : activeSummary.type === 'skincare' ? 'Shipped' : 'On the way'}</span>
+                        </div>
 
-                  {/* Delivery Partner / Carrier Box */}
-                  <div className="delivery-partner-card">
-                    <span className="delivery-partner-label">
-                      {activeSummary.type === 'ride' ? 'Driver & Vehicle' : activeSummary.type === 'skincare' ? 'Courier Carrier' : 'Delivery Partner'}
-                    </span>
-                    <div className="delivery-partner-row">
-                      <div className="rider-info-left">
-                        <img
-                          src={activeSummary.riderImg || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80"}
-                          alt="Partner"
-                          className="rider-avatar-img"
-                        />
-                        <div className="rider-details">
-                          <strong className="rider-name">{activeSummary.driverName || activeSummary.carrier || 'Rider: Rahim'}</strong>
-                          <span className="rider-phone">{activeSummary.driverPhone || activeSummary.trackingId || 'Phone: 01712 345678'}</span>
+                        <div className={`stepper-node ${activeSummary.rawStatus === 'DELIVERED' ? 'active' : ''}`}>
+                          <div className="stepper-circle">🎁</div>
+                          <span className="stepper-node-label">Delivered</span>
                         </div>
                       </div>
-                      <div className="rider-action-btns">
-                        <button className="rider-btn-circle" onClick={() => onToast('Calling delivery partner...')}>📞</button>
-                        <button className="rider-btn-circle" onClick={() => onToast('Opening live chat...')}>💬</button>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Order Items List (with Thumbnail Pictures!) */}
-                  <div className="summary-items-list">
-                    <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#0f172a' }}>Order Items</span>
-                    {activeSummary.items.map((item, idx) => (
-                      <div key={idx} className="summary-item-row">
-                        <div className="summary-item-left">
-                          <img src={item.img} alt={item.name} className="summary-item-img" />
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span className="summary-item-name">{item.name}</span>
-                            <span className="summary-item-qty">{item.qty}</span>
+                      {/* Delivery Partner / Carrier Box */}
+                      <div className="delivery-partner-card">
+                        <span className="delivery-partner-label">
+                          {activeSummary.type === 'ride' ? 'Driver & Vehicle' : activeSummary.type === 'skincare' ? 'Courier Carrier' : 'Delivery Partner'}
+                        </span>
+                        {activeSummary.driverName ? (
+                          <div className="delivery-partner-row">
+                            <div className="rider-info-left">
+                              <img
+                                src={activeSummary.riderImg || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80"}
+                                alt="Partner"
+                                className="rider-avatar-img"
+                              />
+                              <div className="rider-details">
+                                <strong className="rider-name">{activeSummary.driverName}</strong>
+                                <span className="rider-phone">{activeSummary.driverPhone || 'Phone: N/A'}</span>
+                              </div>
+                            </div>
+                            <div className="rider-action-btns">
+                              <button className="rider-btn-circle" onClick={() => onToast('Calling delivery partner...')}>📞</button>
+                              <button className="rider-btn-circle" onClick={() => onToast('Opening live chat...')}>💬</button>
+                            </div>
                           </div>
+                        ) : (
+                          <div style={{ padding: '8px 0', fontSize: '13px', color: '#6b7280', fontStyle: 'italic' }}>
+                            Delivery partner will be assigned soon.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Order Items List */}
+                      <div className="summary-items-list">
+                        <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#0f172a' }}>Order Items</span>
+                        {activeSummary.items.map((item, idx) => (
+                          <div key={idx} className="summary-item-row">
+                            <div className="summary-item-left">
+                              <img src={item.img} alt={item.name} className="summary-item-img" />
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span className="summary-item-name">{item.name}</span>
+                                <span className="summary-item-qty">{item.qty}</span>
+                              </div>
+                            </div>
+                            <span className="summary-item-price">{item.price}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Pricing Breakdown */}
+                      <div className="summary-pricing-table">
+                        <div className="pricing-row">
+                          <span>Subtotal</span>
+                          <strong style={{ color: '#0f172a' }}>{activeSummary.subtotal}</strong>
                         </div>
-                        <span className="summary-item-price">{item.price}</span>
+                        <div className="pricing-row">
+                          <span>Delivery Fee</span>
+                          <strong style={{ color: '#0f172a' }}>{activeSummary.deliveryFee}</strong>
+                        </div>
+                        <div className="pricing-row">
+                          <span>Discount</span>
+                          <span className="text-pink-discount">{activeSummary.discount}</span>
+                        </div>
                       </div>
-                    ))}
-                  </div>
 
-                  {/* Pricing Breakdown */}
-                  <div className="summary-pricing-table">
-                    <div className="pricing-row">
-                      <span>Subtotal</span>
-                      <strong style={{ color: '#0f172a' }}>{activeSummary.subtotal}</strong>
-                    </div>
-                    <div className="pricing-row">
-                      <span>Delivery Fee</span>
-                      <strong style={{ color: '#0f172a' }}>{activeSummary.deliveryFee}</strong>
-                    </div>
-                    <div className="pricing-row">
-                      <span>Discount (10%)</span>
-                      <span className="text-pink-discount">{activeSummary.discount}</span>
-                    </div>
-                  </div>
-
-                  <div className="summary-total-row">
-                    <strong className="total-label">Total</strong>
-                    <strong className="total-amount">{activeSummary.total}</strong>
-                  </div>
-
-                  {/* Payment Method Box */}
-                  <div className="summary-payment-box">
-                    <div className="pay-box-top">
-                      <span>Payment Method</span>
-                      <button className="pay-change-link" onClick={() => onToast('Payment method change options...')}>Change</button>
-                    </div>
-                    <div className="pay-box-bottom">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div className="pay-logo-box bg-bkash" style={{ width: '28px', height: '28px', fontSize: '9px' }}>bKash</div>
-                        <strong style={{ fontSize: '12.5px', color: '#0f172a' }}>bKash</strong>
+                      <div className="summary-total-row">
+                        <strong className="total-label">Total</strong>
+                        <strong className="total-amount">{activeSummary.total}</strong>
                       </div>
-                      <span style={{ fontSize: '13px', fontWeight: '800', color: '#ff2b70' }}>-{activeSummary.total}</span>
-                    </div>
-                  </div>
 
-                  {/* Track Button */}
-                  <button
-                    className="btn-track-order-pink"
-                    onClick={() => onToast(`Tracking ${activeSummary.orderId} live on map...`)}
-                  >
-                    📍 Track Order
-                  </button>
+                      {/* Payment Method Box */}
+                      <div className="summary-payment-box">
+                        <div className="pay-box-top">
+                          <span>Payment Method</span>
+                          <button className="pay-change-link" onClick={() => onToast('Payment method change options...')}>Change</button>
+                        </div>
+                        <div className="pay-box-bottom">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div className="pay-logo-box bg-bkash" style={{ width: '28px', height: '28px', fontSize: '9px' }}>
+                              {activeSummary.paymentMethod}
+                            </div>
+                            <strong style={{ fontSize: '12.5px', color: '#0f172a' }}>{activeSummary.paymentMethod}</strong>
+                          </div>
+                          <span style={{ fontSize: '13px', fontWeight: '800', color: '#ff2b70' }}>-{activeSummary.total}</span>
+                        </div>
+                      </div>
+
+                      {/* Track Button */}
+                      <button
+                        className="btn-track-order-pink"
+                        onClick={() => {
+                          if (activeSummary.driverName) {
+                            onToast(`Tracking ${activeSummary.orderId} live...`);
+                          } else {
+                            onToast(`Status: ${activeSummary.rawStatus}. Live location tracking will appear when the delivery partner is assigned.`);
+                          }
+                        }}
+                      >
+                        📍 Track Order
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
