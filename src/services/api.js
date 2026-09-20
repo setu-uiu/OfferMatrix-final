@@ -2,22 +2,40 @@ const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:500
 
 async function fetchJson(endpoint, options = {}) {
   try {
+    const token = localStorage.getItem('offermatrix_token');
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      ...options.headers
+    };
+
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      },
-      ...options
+      ...options,
+      headers
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+
+    const data = await res.json();
+    if (!res.ok) {
+      return { error: data.error || `HTTP ${res.status}`, status: res.status };
+    }
+    return data;
   } catch (err) {
     console.warn(`API fetch error on ${endpoint}:`, err.message);
-    return null;
+    return { error: err.message };
   }
 }
 
 export const OfferMatrixAPI = {
+  // Auth API
+  register: (data) => fetchJson('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  verifyEmail: (token) => fetchJson('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token }) }),
+  login: (credentials) => fetchJson('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
+  getMe: () => fetchJson('/auth/me'),
+  logout: () => fetchJson('/auth/logout', { method: 'POST' }),
+  forgotPassword: (email) => fetchJson('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (data) => fetchJson('/auth/reset-password', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Domain API
   getHealth: () => fetchJson('/health'),
   getRoles: () => fetchJson('/roles'),
   getUsers: () => fetchJson('/users'),

@@ -186,6 +186,32 @@ export default function App() {
         const notifsRes = await OfferMatrixAPI.getNotifications('usr-nusrat');
         if (notifsRes && Array.isArray(notifsRes)) setNotifications(notifsRes);
 
+        // Persistent authentication state check
+        const token = localStorage.getItem('offermatrix_token');
+        if (token) {
+          const meRes = await OfferMatrixAPI.getMe();
+          if (meRes && meRes.id && !meRes.error) {
+            setCurrentUser(meRes);
+          } else {
+            localStorage.removeItem('offermatrix_token');
+          }
+        }
+
+        // Handle URL parameters for email verification & reset password links
+        const params = new URLSearchParams(window.location.search);
+        const urlToken = params.get('token');
+        if (window.location.pathname.includes('/verify-email') && urlToken) {
+          OfferMatrixAPI.verifyEmail(urlToken).then((res) => {
+            if (res.error) {
+              triggerToast(`Verification Failed: ${res.error}`);
+            } else {
+              triggerToast(`🎉 ${res.message}`);
+              setIsAuthModalOpen(true);
+            }
+            window.history.replaceState({}, document.title, '/');
+          });
+        }
+
       } catch (err) {
         console.warn('API load error:', err);
         setApiError('Unable to sync with live OfferMatrix PostgreSQL service.');
@@ -213,7 +239,11 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await OfferMatrixAPI.logout();
+    } catch (e) {}
+    localStorage.removeItem('offermatrix_token');
     setCurrentUser(null);
     setActiveView('landing');
     setSelectedCategory('all');

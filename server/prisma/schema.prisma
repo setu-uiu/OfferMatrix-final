@@ -17,23 +17,29 @@ model Role {
 }
 
 model User {
-  id               String          @id @default(uuid())
-  email            String          @unique
-  name             String
-  phone            String?
-  avatar           String?
-  status           String          @default("Active") // "Active", "Reported", "Suspended"
-  subscriptionPlan String          @default("free") // "free", "pro", "vip"
-  roleId           String?
-  role             Role?           @relation(fields: [roleId], references: [id])
-  savedDeals       SavedDeal[]
-  priceAlerts      PriceAlert[]
-  complaints       Complaint[]
-  reviews          Review[]
-  notifications    Notification[]
-  auditLogs        AdminAuditLog[]
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id                       String          @id @default(uuid())
+  email                    String          @unique
+  name                     String
+  password                 String?
+  phone                    String?
+  avatar                   String?
+  status                   String          @default("Active") // "Active", "Reported", "Suspended"
+  subscriptionPlan         String          @default("free") // "free", "pro", "vip"
+  isEmailVerified          Boolean         @default(true)
+  verificationToken        String?
+  verificationTokenExpires DateTime?
+  resetPasswordToken       String?
+  resetPasswordExpires     DateTime?
+  roleId                   String?
+  role                     Role?           @relation(fields: [roleId], references: [id])
+  savedDeals               SavedDeal[]
+  priceAlerts              PriceAlert[]
+  complaints               Complaint[]
+  reviews                  Review[]
+  notifications            Notification[]
+  auditLogs                AdminAuditLog[]
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
 }
 
 model Merchant {

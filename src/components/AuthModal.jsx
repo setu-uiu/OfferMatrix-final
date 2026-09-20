@@ -4,6 +4,8 @@ import {
   Percent, Eye, EyeOff, Shield, Check, Phone, Star, Bell, Zap, Sparkles
 } from 'lucide-react';
 
+import { OfferMatrixAPI } from '../services/api';
+
 export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSignUp = false, initialAccountType = 'user', initialCategory = null, onSelectCategory }) {
   const [isSignUp, setIsSignUp] = useState(initialSignUp || initialCategory === 'rides' || initialCategory === 'ride' || initialCategory === 'food');
   const [signUpStep, setSignUpStep] = useState(initialCategory ? 'merchant_explore' : (initialSignUp ? (initialAccountType === 'merchant' ? 'merchant_explore' : 'details') : (initialAccountType === 'merchant' ? 'merchant_explore' : 'select'))); // 'select', 'details', 'merchant_explore', 'verify'
@@ -17,6 +19,10 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [authSuccess, setAuthSuccess] = useState('');
+  const [pendingToken, setPendingToken] = useState('');
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -42,46 +48,108 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
     }
   };
 
-  const handleSignUpSubmit = (e) => {
-    e.preventDefault();
+  const handleSignUpSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setAuthError('');
+    setAuthSuccess('');
+
     if (!agreeTerms) {
+      setAuthError('Please check the box to agree to the Terms of Service & Privacy Policy');
       onToast('Please agree to the Terms of Service & Privacy Policy');
       return;
     }
-    if (password && confirmPassword && password !== confirmPassword) {
+    if (!fullName) {
+      setAuthError('Please enter your full name');
+      return;
+    }
+    if (!email) {
+      setAuthError('Please enter your email address');
+      return;
+    }
+    if (!password || !confirmPassword) {
+      setAuthError('Please enter password and confirm password');
+      return;
+    }
+    if (password.length < 6) {
+      setAuthError('Password must be at least 6 characters long');
+      onToast('Password must be at least 6 characters long');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setAuthError('Passwords do not match');
       onToast('Passwords do not match');
       return;
     }
-    const isAdmin = accountType === 'admin' || (email && email.toLowerCase().includes('admin'));
-    const roleName = isAdmin ? 'admin' : (accountType || 'user');
-    const userName = isAdmin ? 'Admin' : (fullName || 'Meherunnesasetu7');
 
-    onToast(`Welcome, ${userName}! ${isAdmin ? 'Admin' : ''} Account created successfully.`);
-    if (onLoginSuccess) {
-      onLoginSuccess({
-        name: userName,
-        email: email || (isAdmin ? 'admin@offermatrix.com' : 'setumeherunnesa59@gmail.com'),
-        role: roleName
-      });
+    setAuthLoading(true);
+    const roleName = accountType === 'admin' || (email && email.toLowerCase().includes('admin')) ? 'ADMIN' : (accountType === 'merchant' ? 'MERCHANT' : 'USER');
+
+    const res = await OfferMatrixAPI.register({
+      name: fullName,
+      email,
+      password,
+      confirmPassword,
+      roleName
+    });
+
+    setAuthLoading(false);
+
+    if (res.error) {
+      setAuthError(`Registration Failed: ${res.error}`);
+      onToast(`Registration Failed: ${res.error}`);
+    } else {
+      setAuthSuccess(`Account created successfully! Logging you in...`);
+      onToast(`Account created successfully! 🎉`);
+
+      // Auto-verify email and automatically log user in so Dashboard opens immediately
+      if (res.verificationToken) {
+        await OfferMatrixAPI.verifyEmail(res.verificationToken);
+      }
+
+      const loginRes = await OfferMatrixAPI.login({ email, password });
+      if (!loginRes.error && loginRes.user) {
+        if (loginRes.token) {
+          localStorage.setItem('offermatrix_token', loginRes.token);
+        }
+        onToast(`Welcome, ${loginRes.user.name}! 👋`);
+        if (onLoginSuccess) {
+          onLoginSuccess(loginRes.user);
+        }
+        onClose();
+      } else {
+        setAuthSuccess(`Account created! A verification link was sent to ${email}.`);
+      }
     }
-    onClose();
   };
 
-  const handleSignInSubmit = (e) => {
-    e.preventDefault();
-    const isAdmin = accountType === 'admin' || (email && email.toLowerCase().includes('admin'));
-    const roleName = isAdmin ? 'admin' : (accountType || 'user');
-    const userName = isAdmin ? 'Admin' : 'Meherunnesasetu7';
+  const handleSignInSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setAuthError('');
+    setAuthSuccess('');
 
-    onToast(`Welcome back, ${userName}!`);
-    if (onLoginSuccess) {
-      onLoginSuccess({
-        name: userName,
-        email: email || (isAdmin ? 'admin@offermatrix.com' : 'setumeherunnesa59@gmail.com'),
-        role: roleName
-      });
+    if (!email || !password) {
+      setAuthError('Please enter your email and password');
+      onToast('Please enter your email and password');
+      return;
     }
-    onClose();
+
+    setAuthLoading(true);
+    const res = await OfferMatrixAPI.login({ email, password });
+    setAuthLoading(false);
+
+    if (res.error) {
+      setAuthError(`Login Failed: ${res.error}`);
+      onToast(`Login Failed: ${res.error}`);
+    } else {
+      if (res.token) {
+        localStorage.setItem('offermatrix_token', res.token);
+      }
+      onToast(`Welcome back, ${res.user.name}! 👋`);
+      if (onLoginSuccess) {
+        onLoginSuccess(res.user);
+      }
+      onClose();
+    }
   };
 
   const handleSocialLogin = (provider) => {
@@ -1282,6 +1350,58 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                       <h2 className="auth-details-title">Create Your Account</h2>
                       <p className="auth-details-subtitle">Fill in your details to get started</p>
 
+                      {/* Inline Alert Banners */}
+                      {authError && (
+                        <div style={{ background: '#fef2f2', border: '1.5px solid #fca5a5', color: '#991b1b', padding: '12px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: '600', marginBottom: '14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: authError.toLowerCase().includes('already exists') ? '8px' : '0' }}>
+                            <span>⚠️</span>
+                            <span>{authError}</span>
+                          </div>
+                          {authError.toLowerCase().includes('already exists') && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsSignUp(false);
+                                setAuthError('');
+                                setAuthSuccess('');
+                              }}
+                              style={{ background: '#ff2b70', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+                            >
+                              Click here to Sign In with this email 🔑
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {authSuccess && (
+                        <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', color: '#166534', padding: '12px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: '600', marginBottom: '14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: pendingToken ? '8px' : '0' }}>
+                            <span>✅</span>
+                            <span>{authSuccess}</span>
+                          </div>
+                          {pendingToken && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                setAuthLoading(true);
+                                const vRes = await OfferMatrixAPI.verifyEmail(pendingToken);
+                                setAuthLoading(false);
+                                if (vRes.error) {
+                                  setAuthError(vRes.error);
+                                } else {
+                                  setAuthSuccess('Email verified successfully! You can now Sign In.');
+                                  setPendingToken('');
+                                  onToast('Email verified successfully! 🎉');
+                                }
+                              }}
+                              style={{ background: '#22c55e', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', marginTop: '4px' }}
+                            >
+                              Click to Instant Verify Email Now ⚡
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       {/* Registration Form */}
                       <form onSubmit={handleSignUpSubmit} className="auth-details-form">
                         {/* Row 1: Full Name & Email Address */}
@@ -1392,8 +1512,14 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                         </div>
 
                         {/* Submit Button */}
-                        <button type="submit" className="auth-submit-btn-pink">
-                          <span>Create Account</span>
+                        <button
+                          type="submit"
+                          className="auth-submit-btn-pink"
+                          onClick={handleSignUpSubmit}
+                          disabled={authLoading}
+                          style={{ opacity: authLoading ? 0.7 : 1, cursor: authLoading ? 'not-allowed' : 'pointer' }}
+                        >
+                          <span>{authLoading ? 'Creating Account...' : 'Create Account'}</span>
                           <ArrowRight size={18} />
                         </button>
                       </form>
@@ -1459,6 +1585,21 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                     </p>
                   </div>
 
+                  {/* Inline Alert Banners */}
+                  {authError && (
+                    <div style={{ background: '#fef2f2', border: '1.5px solid #fca5a5', color: '#991b1b', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: '600', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>⚠️</span>
+                      <span>{authError}</span>
+                    </div>
+                  )}
+
+                  {authSuccess && (
+                    <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', color: '#166534', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: '600', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>✅</span>
+                      <span>{authSuccess}</span>
+                    </div>
+                  )}
+
                   <form onSubmit={handleSignInSubmit} className="auth-form">
                     {/* Email / Phone Input */}
                     <div className="auth-input-group">
@@ -1522,8 +1663,14 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                     </div>
 
                     {/* Submit Button */}
-                    <button type="submit" className="auth-submit-btn">
-                      <span>Sign In</span>
+                    <button
+                      type="submit"
+                      className="auth-submit-btn"
+                      onClick={handleSignInSubmit}
+                      disabled={authLoading}
+                      style={{ opacity: authLoading ? 0.7 : 1, cursor: authLoading ? 'not-allowed' : 'pointer' }}
+                    >
+                      <span>{authLoading ? 'Signing In...' : 'Sign In'}</span>
                       <ArrowRight size={18} />
                     </button>
                   </form>
