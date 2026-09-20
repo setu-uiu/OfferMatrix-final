@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 
 import { OfferMatrixAPI } from '../services/api';
+import DeliveryManagementView from './DeliveryManagementView';
 
 export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSignUp = false, initialAccountType = 'user', initialCategory = null, onSelectCategory }) {
   const [isSignUp, setIsSignUp] = useState(initialSignUp || initialCategory === 'rides' || initialCategory === 'ride' || initialCategory === 'food');
@@ -14,6 +15,7 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
   const [skincareSubStep, setSkincareSubStep] = useState(initialCategory === 'skincare');
   const [foodSubStep, setFoodSubStep] = useState(initialCategory === 'food');
   const [rideSubStep, setRideSubStep] = useState(initialCategory === 'rides' || initialCategory === 'ride');
+  const [showDeliveryManagement, setShowDeliveryManagement] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -794,31 +796,82 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
               </div>
             </div>
           ) : (
-            <div className="merchant-explore-container">
-              {/* Top Navigation / Back Button */}
-              <div className="explore-top-nav">
-                <button
-                  type="button"
-                  className="auth-back-to-types-btn"
-                  onClick={() => {
-                    setSignUpStep('select');
-                    setAccountType('user');
-                  }}
-                >
-                  <ArrowLeft size={16} />
-                  <span>Back to Account Types</span>
-                </button>
-              </div>
+            showDeliveryManagement ? (
+              <DeliveryManagementView
+                onBack={() => setShowDeliveryManagement(false)}
+                onLogout={() => {
+                  setShowDeliveryManagement(false);
+                  if (onClose) onClose();
+                }}
+                onToast={onToast}
+              />
+            ) : (
+              <div className="merchant-explore-container">
+                {/* Top Navigation / Back Button & Upper Right Rider Badge */}
+                <div className="explore-top-nav">
+                  <button
+                    type="button"
+                    className="auth-back-to-types-btn"
+                    onClick={() => {
+                      setSignUpStep('select');
+                      setAccountType('user');
+                    }}
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Back to Account Types</span>
+                  </button>
 
-              {/* Floating Decorative Elements */}
-              <div className="dot dot-pink"></div>
-              <div className="dot dot-orange"></div>
-              <div className="dot dot-mint"></div>
-              <div className="dot dot-purple"></div>
+                  {/* Upper Right Corner Small Circular Rider Icon with Hover Pop-up */}
+                  <div className="top-right-rider-wrapper" onClick={() => setShowDeliveryManagement(true)}>
+                    <div
+                      className="top-right-rider-circle"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDeliveryManagement(true);
+                      }}
+                      title="Assign Delivery Partner"
+                    >
+                      <img
+                        src="/assets/delivery_rider.png"
+                        alt="Assign Delivery Partner"
+                        className="rider-circle-img"
+                      />
+                      <span className="rider-online-dot"></span>
+                    </div>
 
-              <div className="explore-float-gift">🎁</div>
-              <div className="explore-float-pink-tag">%</div>
-              <div className="explore-float-bags">🛍️</div>
+                    {/* Hover Pop-up Card */}
+                    <div className="top-right-rider-popup" onClick={() => setShowDeliveryManagement(true)}>
+                      <div className="popup-rider-header">
+                        <span className="popup-rider-badge">🛵 Delivery Partner</span>
+                        <span className="popup-rider-status">🟢 Active</span>
+                      </div>
+                      <h4 className="popup-rider-title">Assign Delivery Partner</h4>
+                      <p className="popup-rider-desc">
+                        Fast delivery dispatch &amp; real-time rider assignment across Foodpanda, Pathao &amp; Foodi.
+                      </p>
+                      <div className="popup-rider-footer">
+                        <span>Click to manage rider assignment ➔</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating Decorative Elements */}
+                <div className="dot dot-pink"></div>
+                <div className="dot dot-orange"></div>
+                <div className="dot dot-mint"></div>
+                <div className="dot dot-purple"></div>
+
+                <div className="explore-float-gift">🎁</div>
+                <div className="explore-float-pink-tag">%</div>
+                <div className="explore-float-bags">🛍️</div>
+                <img
+                  src="/assets/delivery_rider.png"
+                  alt="Assign Delivery Partner"
+                  className="explore-float-rider"
+                  title="Assign Delivery Partner"
+                  onClick={() => setShowDeliveryManagement(true)}
+                />
               <div className="explore-float-purple-tag">%</div>
               <div className="explore-float-car">🚗</div>
               <div className="explore-float-leaves">🌿</div>
@@ -1025,7 +1078,8 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
               </div>
             </div>
           )
-        ) : (
+        )
+      ) : (
           <div className="auth-modal-body">
             {/* Left Panel: Branding */}
             <div className="auth-left-panel">
