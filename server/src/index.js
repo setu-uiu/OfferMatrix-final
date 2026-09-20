@@ -554,7 +554,7 @@ async function generateUniqueOrderNumber() {
   const count = await prisma.foodOrder.count();
   const randomSuffix = Math.floor(1000 + Math.random() * 9000);
   const candidate = `OM-${dateStr}-${String(count + 1).padStart(4, '0')}`;
-  
+
   const existing = await prisma.foodOrder.findUnique({ where: { orderNumber: candidate } });
   if (existing) {
     return `OM-${dateStr}-${randomSuffix}`;

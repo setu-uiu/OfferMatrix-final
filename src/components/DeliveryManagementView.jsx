@@ -140,9 +140,9 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
   const filteredPartners = partnersList.filter(p => {
     const matchesTab = partnerFilterTab === 'all' ? true :
       partnerFilterTab === 'available' ? p.statusType === 'available' :
-      partnerFilterTab === 'on_delivery' ? (p.statusType === 'on_delivery' || p.statusType === 'busy') :
-      partnerFilterTab === 'offline' ? p.statusType === 'offline' :
-      partnerFilterTab === 'suspended' ? p.statusType === 'suspended' : true;
+        partnerFilterTab === 'on_delivery' ? (p.statusType === 'on_delivery' || p.statusType === 'busy') :
+          partnerFilterTab === 'offline' ? p.statusType === 'offline' :
+            partnerFilterTab === 'suspended' ? p.statusType === 'suspended' : true;
 
     const matchesSearch = p.name.toLowerCase().includes(partnerSearchQuery.toLowerCase()) ||
       p.partnerCode.toLowerCase().includes(partnerSearchQuery.toLowerCase()) ||
@@ -153,7 +153,7 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
   return (
     <div style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: "'Inter', sans-serif", color: '#1e293b' }}>
-      
+
       {/* ================= TOP HEADER BAR ================= */}
       <header style={{
         background: '#ffffff',
@@ -264,7 +264,7 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
       {/* ================= MAIN DASHBOARD BODY ================= */}
       <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', minHeight: 'calc(100vh - 57px)' }}>
-        
+
         {/* ---------------- LEFT SIDEBAR ---------------- */}
         <aside style={{ background: '#ffffff', borderRight: '1px solid #e2e8f0', padding: '20px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
@@ -272,7 +272,7 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
             <div style={{ fontSize: '11px', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: '12px' }}>
               DELIVERY MANAGEMENT
             </div>
-            
+
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {[
                 { name: 'Dashboard', icon: LayoutDashboard },
@@ -431,7 +431,7 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
         {/* ---------------- RIGHT CONTENT AREA ---------------- */}
         <main style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          
+
           {/* CONDITIONALLY RENDER BASED ON ACTIVE SIDEBAR ITEM */}
           {activeSidebarItem === 'Assign Partner' ? (
 
@@ -1750,10 +1750,10 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
             </div>
 
           ) : activeSidebarItem === 'Delivery Partners' ? (
-            
+
             /* ================= DELIVERY PARTNERS VIEW ================= */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              
+
               {/* PAGE TITLE & ADD NEW PARTNER BUTTON */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
@@ -1955,7 +1955,7 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
               {/* 3-COLUMN WORKSPACE GRID */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr', gap: '20px' }}>
-                
+
                 {/* COL 1: PARTNERS LIST */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '540px', overflowY: 'auto', paddingRight: '4px' }}>
                   {filteredPartners.map((partner) => {
@@ -2014,7 +2014,7 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
                 {/* COL 2: LIVE LOCATION GOOGLE MAP EMBED */}
                 <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                  
+
                   {/* Google Maps Embed Base */}
                   <div style={{ width: '100%', height: '480px', position: 'relative', background: '#e0f2fe' }}>
                     <iframe
@@ -2101,7 +2101,7 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
                 {/* COL 3: PARTNER DETAILS PANEL */}
                 <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                  
+
                   <div>
                     {/* Details Header */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>

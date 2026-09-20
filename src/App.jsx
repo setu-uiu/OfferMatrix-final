@@ -247,7 +247,7 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await OfferMatrixAPI.logout();
-    } catch (e) {}
+    } catch (e) { }
     localStorage.removeItem('offermatrix_token');
     setCurrentUser(null);
     setUserOrders([]);

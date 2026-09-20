@@ -1685,11 +1685,11 @@ export default function UserDashboard({
   const formattedUserOrders = (userOrders || []).map(order => {
     const rawSt = order.status || 'PENDING';
     const firstItem = order.items?.[0];
-    const itemsTitle = order.items && order.items.length > 0 
+    const itemsTitle = order.items && order.items.length > 0
       ? order.items.map(i => `${i.name}${i.quantity > 1 ? ` x${i.quantity}` : ''}`).join(' + ')
       : 'Food Order';
 
-    const formattedDateStr = order.createdAt 
+    const formattedDateStr = order.createdAt
       ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
       : 'Today';
 
@@ -1720,6 +1720,8 @@ export default function UserDashboard({
         driverName: order.deliveryPartner?.name ? `Rider: ${order.deliveryPartner.name}` : null,
         driverPhone: order.deliveryPartner?.phone || null,
         riderImg: order.deliveryPartner?.avatar || null,
+        partnerCode: order.deliveryPartner?.partnerCode || null,
+        riderVehicle: order.deliveryPartner?.vehicle || null,
         items: (order.items || []).map(i => ({
           name: i.name,
           qty: `x${i.quantity}`,
@@ -2960,7 +2962,7 @@ export default function UserDashboard({
                           <div className="order-stepper-line-fill" style={{
                             width: activeSummary.rawStatus === 'DELIVERED' ? '100%'
                               : ['ON_THE_WAY', 'PICKED_UP'].includes(activeSummary.rawStatus) ? '75%'
-                              : ['PREPARING', 'READY_FOR_PICKUP'].includes(activeSummary.rawStatus) ? '50%' : '25%'
+                                : ['PREPARING', 'READY_FOR_PICKUP'].includes(activeSummary.rawStatus) ? '50%' : '25%'
                           }}></div>
                         </div>
 
@@ -2999,8 +3001,20 @@ export default function UserDashboard({
                                 className="rider-avatar-img"
                               />
                               <div className="rider-details">
-                                <strong className="rider-name">{activeSummary.driverName}</strong>
-                                <span className="rider-phone">{activeSummary.driverPhone || 'Phone: N/A'}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <strong className="rider-name">{activeSummary.driverName}</strong>
+                                  {activeSummary.partnerCode && (
+                                    <span style={{ fontSize: '10px', background: '#fdf2f8', color: '#db2777', padding: '1px 6px', borderRadius: '6px', fontWeight: 700, border: '1px solid #fbcfe8' }}>
+                                      {activeSummary.partnerCode}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="rider-phone">📞 {activeSummary.driverPhone || 'Phone: N/A'}</span>
+                                {activeSummary.riderVehicle && (
+                                  <span className="rider-vehicle" style={{ fontSize: '11px', color: '#6b7280' }}>
+                                    🛵 {activeSummary.riderVehicle}
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <div className="rider-action-btns">
