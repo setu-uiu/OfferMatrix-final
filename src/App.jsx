@@ -835,17 +835,3 @@ export default function App() {
     </div>
   );
 }
-            } else if (cat === 'indriver' || cat === 'indrive') {
-  setActiveView('indriver');
-} else {
-  setActiveView('dashboard');
-}
-setIsAuthModalOpen(false);
-          }}
-        />
-      )}
-
-<ToastNotification message={toastMessage} />
-    </div >
-  );
-}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import OrdersManagementView from './OrdersManagementView';
 import {
   Percent, Menu, Search, Bell, User, LayoutDashboard, Users, Bike, MapPin,
   ShoppingBag, DollarSign, TrendingUp, Star, AlertCircle, FileText, Settings,
@@ -168,6 +169,28 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
       }}>
         {/* Left: Brand Logo & Navigation Toggle */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: '1px solid #fecdd3',
+                background: '#fff0f5',
+                color: '#ff2b70',
+                borderRadius: '99px',
+                padding: '6px 14px',
+                fontSize: '12.5px',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              <ArrowLeft size={14} />
+              <span>Back to OfferMatrix</span>
+            </button>
+          )}
+
           <div
             onClick={onBack}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
@@ -185,7 +208,7 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
               <Percent size={18} strokeWidth={3} />
             </div>
             <span style={{ fontSize: '20px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px' }}>
-              Offer<span style={{ color: '#10b981' }}>Matrix</span>
+              Offer<span style={{ color: '#ff2b70' }}>Matrix</span>
             </span>
           </div>
 
@@ -1748,6 +1771,11 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
               </div>
 
             </div>
+
+          ) : activeSidebarItem === 'Orders' ? (
+
+            /* ================= ORDERS MANAGEMENT VIEW (SCREENSHOT 1) ================= */
+            <OrdersManagementView onToast={onToast} />
 
           ) : activeSidebarItem === 'Delivery Partners' ? (
 
