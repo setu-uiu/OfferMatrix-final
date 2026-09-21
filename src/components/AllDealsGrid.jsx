@@ -17,7 +17,7 @@ export default function AllDealsGrid({
   // Filter deals
   const filteredDeals = sourceDeals.filter((deal) => {
     const matchesCategory = selectedCategory === 'all' || deal.category === selectedCategory;
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (deal.tag && deal.tag.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
@@ -48,8 +48,8 @@ export default function AllDealsGrid({
             <Filter size={16} />
             Sort By:
           </div>
-          <select 
-            value={sortBy} 
+          <select
+            value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             style={{
               padding: '8px 14px',
@@ -78,7 +78,7 @@ export default function AllDealsGrid({
         }}>
           <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#1f2937' }}>No deals found matching "{searchQuery}"</h3>
           <p style={{ color: '#6b7280', marginTop: '6px' }}>Try searching for Biryani, Rides, Skincare, or change your category filter.</p>
-          <button 
+          <button
             style={{
               marginTop: '16px',
               padding: '10px 24px',
@@ -110,14 +110,14 @@ export default function AllDealsGrid({
                   }}>
                     {deal.tag}
                   </span>
-                  <button 
+                  <button
                     className="btn-card-heart"
                     onClick={() => toggleSaveDeal(deal)}
                   >
-                    <Heart 
-                      size={18} 
-                      fill={isSaved ? "#ff4757" : "none"} 
-                      color="#ff4757" 
+                    <Heart
+                      size={18}
+                      fill={isSaved ? "#ff4757" : "none"}
+                      color="#ff4757"
                     />
                   </button>
                 </div>
@@ -162,7 +162,7 @@ export default function AllDealsGrid({
                 </div>
 
                 {/* CTA */}
-                <button 
+                <button
                   className="btn-card-action"
                   onClick={() => onOpenDealDetail(deal)}
                 >
