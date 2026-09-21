@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import OrdersManagementView from './OrdersManagementView';
 import EarningsPayoutsView from './EarningsPayoutsView';
+import PerformanceAnalyticsView from './PerformanceAnalyticsView';
 import {
   Percent, Menu, Search, Bell, User, LayoutDashboard, Users, Bike, MapPin,
   ShoppingBag, DollarSign, TrendingUp, Star, AlertCircle, FileText, Settings,
@@ -1782,6 +1783,11 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
             /* ================= EARNINGS & PAYOUTS VIEW ================= */
             <EarningsPayoutsView onToast={onToast} />
+
+          ) : activeSidebarItem === 'Performance' ? (
+
+            /* ================= PERFORMANCE ANALYTICS VIEW ================= */
+            <PerformanceAnalyticsView onToast={onToast} />
 
           ) : activeSidebarItem === 'Delivery Partners' ? (
 
