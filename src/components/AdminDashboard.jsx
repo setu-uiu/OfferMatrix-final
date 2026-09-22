@@ -3106,7 +3106,7 @@ export default function AdminDashboard({
                       {/* Top header */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <div style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a' }}>
-                          &lt; <span style={{ color: '#000000' }}>Offer</span><span style={{ color: '#ec4899' }}>Matrix</span>
+                          &lt; <span style={{ color: '#000000' }}>Offer</span><span style={{ color: '#00c853' }}>Matrix</span>
                         </div>
                         <div style={{ display: 'flex', gap: '3px' }}>
                           <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#000000' }}></div>
@@ -3783,7 +3783,7 @@ export default function AdminDashboard({
                         {/* Phone Status / Header */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                           <div style={{ fontWeight: 900, fontSize: '13px', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ color: '#ec4899', fontSize: '12px' }}>%</span> Offer<span style={{ color: '#ec4899' }}>Matrix</span>
+                            <span style={{ color: '#ff2b70', fontSize: '12px' }}>%</span> Offer<span style={{ color: '#00c853' }}>Matrix</span>
                           </div>
                           <div style={{ display: 'flex', gap: '4px' }}>
                             <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#ec4899' }}></div>

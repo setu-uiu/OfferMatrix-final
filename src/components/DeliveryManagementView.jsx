@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import FoodPlatformView from './FoodPlatformView';
 import RidePlatformView from './RidePlatformView';
+import SkincarePlatformView from './SkincarePlatformView';
 import OrdersManagementView from './OrdersManagementView';
 import EarningsPayoutsView from './EarningsPayoutsView';
 import PerformanceAnalyticsView from './PerformanceAnalyticsView';
@@ -201,22 +202,23 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
           <div
             onClick={onBack}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
           >
             <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, #ff2b70, #ff6b4a)',
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              background: '#ff2b70',
+              boxShadow: '0 4px 14px rgba(255, 43, 112, 0.35)',
               display: 'flex',
               alignItems: 'center',
-              justify: 'center',
+              justifyContent: 'center',
               color: '#ffffff'
             }}>
-              <Percent size={18} strokeWidth={3} />
+              <Percent size={20} strokeWidth={3} />
             </div>
-            <span style={{ fontSize: '20px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px' }}>
-              Offer<span style={{ color: '#ff2b70' }}>Matrix</span>
+            <span style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px' }}>
+              Offer<span style={{ color: '#00c853' }}>Matrix</span>
             </span>
           </div>
 
@@ -256,23 +258,6 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
             style={{ position: 'relative', cursor: 'pointer', color: '#475569' }}
           >
             <Bell size={20} />
-            <span style={{
-              position: 'absolute',
-              top: '-3px',
-              right: '-3px',
-              width: '16px',
-              height: '16px',
-              borderRadius: '50%',
-              background: '#ff2b70',
-              color: '#ffffff',
-              fontSize: '10px',
-              fontWeight: 800,
-              display: 'flex',
-              alignItems: 'center',
-              justify: 'center'
-            }}>
-              5
-            </span>
           </div>
 
           <div
@@ -1827,6 +1812,11 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
             /* ================= RIDE PLATFORM VIEW ================= */
             <RidePlatformView onToast={onToast} />
+
+          ) : activeSidebarItem === 'Skincare' ? (
+
+            /* ================= SKINCARE PLATFORM VIEW ================= */
+            <SkincarePlatformView onToast={onToast} />
 
           ) : activeSidebarItem === 'Delivery Partners' ? (
 

@@ -180,46 +180,48 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
   return (
     <div className="auth-modal-overlay">
       <div className={`auth-modal-wrapper ${signUpStep === 'merchant_explore' ? 'explore-mode' : ''}`}>
-        {/* Top Header Bar */}
-        <div className="auth-top-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button
-              type="button"
-              className="auth-header-back-btn"
-              onClick={() => {
-                if (signUpStep !== 'select' && isSignUp && signUpStep !== 'merchant_explore') {
-                  setSignUpStep('select');
-                } else {
-                  onClose();
-                }
-              }}
-            >
-              <ArrowLeft size={16} color="#ff2b70" strokeWidth={2.5} />
-              <span>Back to OfferMatrix</span>
-            </button>
+        {/* Top Header Bar (Hidden in Delivery Management view for full screen fit) */}
+        {!showDeliveryManagement && (
+          <div className="auth-top-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <button
+                type="button"
+                className="auth-header-back-btn"
+                onClick={() => {
+                  if (signUpStep !== 'select' && isSignUp && signUpStep !== 'merchant_explore') {
+                    setSignUpStep('select');
+                  } else {
+                    onClose();
+                  }
+                }}
+              >
+                <ArrowLeft size={16} color="#ff2b70" strokeWidth={2.5} />
+                <span>Back to OfferMatrix</span>
+              </button>
 
-            <div className="logo-wrapper" onClick={onClose} style={{ cursor: 'pointer' }}>
-              <div className="logo-icon">
-                <Percent size={20} strokeWidth={3} />
+              <div className="logo-wrapper" onClick={onClose} style={{ cursor: 'pointer' }}>
+                <div className="logo-icon">
+                  <Percent size={20} strokeWidth={3} />
+                </div>
+                <div className="logo-text">
+                  Offer<span>Matrix</span>
+                </div>
               </div>
-              <div className="logo-text">
-                Offer<span>Matrix</span>
+            </div>
+
+            <div className="auth-top-header-right">
+              <div className="auth-header-secure">
+                <div className="auth-secure-green-circle">
+                  <ShieldCheck size={18} color="#ffffff" />
+                </div>
+                <div className="auth-secure-text">
+                  <span className="auth-secure-title">Secure &amp; Trusted</span>
+                  <span className="auth-secure-sub">Your data is protected</span>
+                </div>
               </div>
             </div>
           </div>
-
-          <div className="auth-top-header-right">
-            <div className="auth-header-secure">
-              <div className="auth-secure-green-circle">
-                <ShieldCheck size={18} color="#ffffff" />
-              </div>
-              <div className="auth-secure-text">
-                <span className="auth-secure-title">Secure &amp; Trusted</span>
-                <span className="auth-secure-sub">Your data is protected</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Modal Body Container */}
         {signUpStep === 'merchant_explore' ? (
