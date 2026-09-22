@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import FoodPlatformView from './FoodPlatformView';
+import RidePlatformView from './RidePlatformView';
 import OrdersManagementView from './OrdersManagementView';
 import EarningsPayoutsView from './EarningsPayoutsView';
 import PerformanceAnalyticsView from './PerformanceAnalyticsView';
@@ -1821,6 +1822,11 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
             /* ================= FOOD PLATFORM VIEW ================= */
             <FoodPlatformView onToast={onToast} />
+
+          ) : activeSidebarItem === 'Ride' ? (
+
+            /* ================= RIDE PLATFORM VIEW ================= */
+            <RidePlatformView onToast={onToast} />
 
           ) : activeSidebarItem === 'Delivery Partners' ? (
 
