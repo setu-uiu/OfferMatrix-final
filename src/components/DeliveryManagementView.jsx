@@ -3,6 +3,7 @@ import OrdersManagementView from './OrdersManagementView';
 import EarningsPayoutsView from './EarningsPayoutsView';
 import PerformanceAnalyticsView from './PerformanceAnalyticsView';
 import RatingsReviewsView from './RatingsReviewsView';
+import ReportsAnalyticsView from './ReportsAnalyticsView';
 import SuspendedPartnersView from './SuspendedPartnersView';
 import {
   Percent, Menu, Search, Bell, User, LayoutDashboard, Users, Bike, MapPin,
@@ -1800,6 +1801,11 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
             /* ================= SUSPENDED PARTNERS VIEW ================= */
             <SuspendedPartnersView onToast={onToast} />
+
+          ) : activeSidebarItem === 'Reports' ? (
+
+            /* ================= REPORTS & ANALYTICS VIEW ================= */
+            <ReportsAnalyticsView onToast={onToast} />
 
           ) : activeSidebarItem === 'Delivery Partners' ? (
 
