@@ -1065,7 +1065,935 @@ app.get('/api/audit-logs', async (req, res) => {
   }
 });
 
+// ==================== DELIVERY PARTNER MANAGEMENT API ROUTES ====================
+
+// Seed Initial Delivery Partners if none exist
+async function seedInitialDeliveryPartners() {
+  try {
+    const count = await prisma.deliveryPartner.count();
+    if (count === 0) {
+      console.log('📦 Seeding initial Delivery Partners into PostgreSQL...');
+      const partnersData = [
+        {
+          name: 'Rahim Ahmed',
+          phone: '+880 1712 345678',
+          email: 'rahim.delivery@offermatrix.bd',
+          partnerCode: 'DP-101',
+          vehicle: 'Honda Dream 110 (Motorcycle)',
+          vehicleType: 'Motorcycle',
+          vehicleModel: 'Honda Dream 110',
+          vehicleRegistration: 'Dhaka-Metro-HA-1234',
+          licensePlate: 'Dhaka-Metro-HA-1234',
+          rating: 4.9,
+          status: 'AVAILABLE',
+          isVerified: true,
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80'
+        },
+        {
+          name: 'Tanvir Hossain',
+          phone: '+880 1819 876543',
+          email: 'tanvir.delivery@offermatrix.bd',
+          partnerCode: 'DP-102',
+          vehicle: 'Yamaha FZ-S (Motorcycle)',
+          vehicleType: 'Motorcycle',
+          vehicleModel: 'Yamaha FZ-S',
+          vehicleRegistration: 'Dhaka-Metro-LA-5678',
+          licensePlate: 'Dhaka-Metro-LA-5678',
+          rating: 4.8,
+          status: 'AVAILABLE',
+          isVerified: true,
+          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80'
+        },
+        {
+          name: 'Kamrul Islam',
+          phone: '+880 1911 223344',
+          email: 'kamrul.delivery@offermatrix.bd',
+          partnerCode: 'DP-103',
+          vehicle: 'TVS Metro Plus (Motorcycle)',
+          vehicleType: 'Motorcycle',
+          vehicleModel: 'TVS Metro Plus',
+          vehicleRegistration: 'Dhaka-Metro-HA-9012',
+          licensePlate: 'Dhaka-Metro-HA-9012',
+          rating: 4.7,
+          status: 'BUSY',
+          isVerified: true,
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80'
+        },
+        {
+          name: 'Shakil Chowdhury',
+          phone: '+880 1612 556677',
+          email: 'shakil.delivery@offermatrix.bd',
+          partnerCode: 'DP-104',
+          vehicle: 'Runner Turbo (Motorcycle)',
+          vehicleType: 'Motorcycle',
+          vehicleModel: 'Runner Turbo',
+          vehicleRegistration: 'Dhaka-Metro-LA-3456',
+          licensePlate: 'Dhaka-Metro-LA-3456',
+          rating: 4.6,
+          status: 'OFFLINE',
+          isVerified: true,
+          avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80'
+        },
+        {
+          name: 'Mehedi Hasan',
+          phone: '+880 1715 889900',
+          email: 'mehedi.delivery@offermatrix.bd',
+          partnerCode: 'DP-105',
+          vehicle: 'Hero Splendor (Motorcycle)',
+          vehicleType: 'Motorcycle',
+          vehicleModel: 'Hero Splendor',
+          vehicleRegistration: 'Dhaka-Metro-HA-7890',
+          licensePlate: 'Dhaka-Metro-HA-7890',
+          rating: 4.8,
+          status: 'AVAILABLE',
+          isVerified: true,
+          avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&q=80'
+        },
+        {
+          name: 'Al-Amin Miah',
+          phone: '+880 1812 112233',
+          email: 'alamin.delivery@offermatrix.bd',
+          partnerCode: 'DP-106',
+          vehicle: 'Bajaj Discover (Motorcycle)',
+          vehicleType: 'Motorcycle',
+          vehicleModel: 'Bajaj Discover',
+          vehicleRegistration: 'Dhaka-Metro-LA-9876',
+          licensePlate: 'Dhaka-Metro-LA-9876',
+          rating: 4.5,
+          status: 'SUSPENDED',
+          isVerified: true,
+          isSuspended: true,
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+        }
+      ];
+
+      for (const p of partnersData) {
+        await prisma.deliveryPartner.create({ data: p });
+      }
+      console.log('✅ 6 Delivery Partners seeded successfully.');
+    }
+  } catch (err) {
+    console.warn('⚠️ Error seeding delivery partners:', err.message);
+  }
+}
+seedInitialDeliveryPartners();
+
+// 17. GET /api/admin/delivery/orders - Return Active Food & Skincare Orders needing delivery
+app.get('/api/admin/delivery/orders', async (req, res) => {
+  try {
+    const { type, status } = req.query;
+
+    let foodWhere = status ? { status } : {};
+    let skincareWhere = status ? { status } : {};
+
+    const [foodOrders, skincareOrders] = await Promise.all([
+      type === 'skincare' ? [] : prisma.foodOrder.findMany({
+        where: foodWhere,
+        include: { user: true, items: true, deliveryPartner: true, assignments: { orderBy: { createdAt: 'desc' } } },
+        orderBy: { createdAt: 'desc' }
+      }),
+      type === 'food' ? [] : prisma.skincareOrder.findMany({
+        where: skincareWhere,
+        include: { user: true, items: true, deliveryPartner: true, assignments: { orderBy: { createdAt: 'desc' } } },
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
+
+    const formattedFood = foodOrders.map(o => ({
+      id: o.id,
+      orderNumber: o.orderNumber,
+      orderType: 'food',
+      merchantName: o.merchantName || 'Food Partner',
+      customerName: o.user ? o.user.name : 'Setu Rahman',
+      customerPhone: o.deliveryPhone || (o.user ? o.user.phone : '+880 1712 000000'),
+      deliveryAddress: o.deliveryAddress || 'House 42, Road 7/A, Dhanmondi, Dhaka',
+      status: o.status,
+      totalAmount: Number(o.totalAmount),
+      subtotal: Number(o.subtotal),
+      deliveryFee: Number(o.deliveryFee),
+      discount: Number(o.discount),
+      paymentMethod: o.paymentMethod,
+      deliveryPartnerId: o.deliveryPartnerId,
+      deliveryPartner: o.deliveryPartner ? {
+        id: o.deliveryPartner.id,
+        name: o.deliveryPartner.name,
+        phone: o.deliveryPartner.phone,
+        avatar: o.deliveryPartner.avatar,
+        partnerCode: o.deliveryPartner.partnerCode,
+        vehicle: o.deliveryPartner.vehicle || o.deliveryPartner.vehicleModel,
+        rating: o.deliveryPartner.rating
+      } : null,
+      items: o.items.map(it => ({
+        id: it.id,
+        name: it.name,
+        quantity: it.quantity,
+        unitPrice: Number(it.unitPrice),
+        totalPrice: Number(it.totalPrice),
+        image: it.image
+      })),
+      assignedAt: o.assignedAt,
+      pickedUpAt: o.pickedUpAt,
+      onTheWayAt: o.onTheWayAt,
+      deliveredAt: o.deliveredAt,
+      createdAt: o.createdAt
+    }));
+
+    const formattedSkincare = skincareOrders.map(o => ({
+      id: o.id,
+      orderNumber: o.orderNumber,
+      orderType: 'skincare',
+      merchantName: o.storePlatform ? o.storePlatform.replace('_', ' ').toUpperCase() : 'Skincare Store',
+      customerName: o.user ? o.user.name : 'Setu Rahman',
+      customerPhone: o.deliveryPhone || (o.user ? o.user.phone : '+880 1712 000000'),
+      deliveryAddress: o.deliveryAddress || 'Flat 5B, Green Road, Dhanmondi, Dhaka',
+      status: o.status,
+      totalAmount: Number(o.totalAmount),
+      subtotal: Number(o.subtotal),
+      deliveryFee: Number(o.deliveryFee),
+      discount: Number(o.discount),
+      paymentMethod: o.paymentMethod,
+      deliveryPartnerId: o.deliveryPartnerId,
+      deliveryPartner: o.deliveryPartner ? {
+        id: o.deliveryPartner.id,
+        name: o.deliveryPartner.name,
+        phone: o.deliveryPartner.phone,
+        avatar: o.deliveryPartner.avatar,
+        partnerCode: o.deliveryPartner.partnerCode,
+        vehicle: o.deliveryPartner.vehicle || o.deliveryPartner.vehicleModel,
+        rating: o.deliveryPartner.rating
+      } : null,
+      items: o.items.map(it => ({
+        id: it.id,
+        name: it.name,
+        quantity: it.quantity,
+        unitPrice: Number(it.unitPrice),
+        totalPrice: Number(it.totalPrice),
+        image: it.image
+      })),
+      assignedAt: o.assignedAt,
+      shippedAt: o.shippedAt,
+      deliveredAt: o.deliveredAt,
+      createdAt: o.createdAt
+    }));
+
+    const allOrders = [...formattedFood, ...formattedSkincare].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.json({
+      success: true,
+      total: allOrders.length,
+      orders: allOrders
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error fetching admin delivery orders: ' + err.message });
+  }
+});
+
+// 18. GET /api/admin/delivery/partners - Filter delivery partners by status
+app.get('/api/admin/delivery/partners', async (req, res) => {
+  try {
+    const { status } = req.query;
+    let where = {};
+    if (status) {
+      const normalized = status.toUpperCase();
+      if (normalized === 'SUSPENDED') {
+        where = { OR: [{ status: { in: ['SUSPENDED', 'Suspended'] } }, { isSuspended: true }] };
+      } else if (normalized === 'AVAILABLE') {
+        where = { status: { in: ['AVAILABLE', 'Available'] }, isSuspended: false };
+      } else if (normalized === 'BUSY') {
+        where = { status: { in: ['BUSY', 'Busy'] } };
+      } else if (normalized === 'OFFLINE') {
+        where = { status: { in: ['OFFLINE', 'Offline'] } };
+      } else {
+        where = { status: { equals: status, mode: 'insensitive' } };
+      }
+    }
+
+    const partners = await prisma.deliveryPartner.findMany({
+      where,
+      include: {
+        orders: { where: { status: { notIn: ['DELIVERED', 'CANCELLED'] } } },
+        skincareOrders: { where: { status: { notIn: ['DELIVERED', 'CANCELLED'] } } },
+        locations: { orderBy: { recordedAt: 'desc' }, take: 1 }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const result = partners.map(p => {
+      const activeCount = p.orders.length + p.skincareOrders.length;
+      const latestLoc = p.locations.length > 0 ? p.locations[0] : null;
+      return {
+        id: p.id,
+        name: p.name,
+        phone: p.phone,
+        email: p.email,
+        partnerCode: p.partnerCode || `DP-${p.id.slice(0, 4)}`,
+        avatar: p.avatar,
+        vehicle: p.vehicle || p.vehicleModel || 'Motorcycle',
+        vehicleType: p.vehicleType || 'Motorcycle',
+        vehicleRegistration: p.vehicleRegistration || p.licensePlate || 'Dhaka-Metro-HA-1000',
+        licensePlate: p.licensePlate || p.vehicleRegistration || 'Dhaka-Metro-HA-1000',
+        rating: p.rating,
+        status: p.status,
+        isVerified: p.isVerified,
+        isSuspended: p.isSuspended,
+        activeOrdersCount: activeCount,
+        totalDeliveries: p.totalDeliveries,
+        joinedAt: p.joinedAt,
+        latestLocation: latestLoc ? {
+          latitude: latestLoc.latitude,
+          longitude: latestLoc.longitude,
+          accuracy: latestLoc.accuracy,
+          recordedAt: latestLoc.recordedAt
+        } : null
+      };
+    });
+
+    res.json({ success: true, partners: result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error fetching delivery partners: ' + err.message });
+  }
+});
+
+// 19. GET /api/admin/delivery/partners/:id - Partner profile & assigned orders
+app.get('/api/admin/delivery/partners/:id', async (req, res) => {
+  try {
+    const partner = await prisma.deliveryPartner.findUnique({
+      where: { id: req.params.id },
+      include: {
+        orders: { include: { items: true, user: true } },
+        skincareOrders: { include: { items: true, user: true } },
+        assignments: { orderBy: { createdAt: 'desc' }, take: 10 },
+        earnings: { orderBy: { createdAt: 'desc' }, take: 10 },
+        locations: { orderBy: { recordedAt: 'desc' }, take: 1 }
+      }
+    });
+
+    if (!partner) {
+      return res.status(404).json({ success: false, error: 'Delivery Partner not found' });
+    }
+
+    res.json({ success: true, partner });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error fetching partner profile: ' + err.message });
+  }
+});
+
+// 20. POST /api/admin/delivery/orders/:orderId/assign - Assign Delivery Partner to Order
+app.post('/api/admin/delivery/orders/:orderId/assign', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { deliveryPartnerId } = req.body;
+
+    if (!deliveryPartnerId) {
+      return res.status(400).json({ success: false, error: 'deliveryPartnerId is required' });
+    }
+
+    const partner = await prisma.deliveryPartner.findUnique({ where: { id: deliveryPartnerId } });
+    if (!partner) {
+      return res.status(404).json({ success: false, error: 'Delivery Partner not found' });
+    }
+
+    if (partner.isSuspended || partner.status === 'SUSPENDED') {
+      return res.status(400).json({ success: false, error: 'Cannot assign suspended delivery partner' });
+    }
+
+    let foodOrder = await prisma.foodOrder.findUnique({ where: { id: orderId } });
+    let skincareOrder = null;
+
+    if (!foodOrder) {
+      skincareOrder = await prisma.skincareOrder.findUnique({ where: { id: orderId } });
+    }
+
+    if (!foodOrder && !skincareOrder) {
+      return res.status(404).json({ success: false, error: 'Order not found in Food or Skincare orders' });
+    }
+
+    const isFood = !!foodOrder;
+    const targetOrder = foodOrder || skincareOrder;
+
+    // Update order
+    const updatedOrder = isFood
+      ? await prisma.foodOrder.update({
+        where: { id: orderId },
+        data: {
+          deliveryPartnerId: partner.id,
+          status: targetOrder.status === 'PENDING' ? 'CONFIRMED' : targetOrder.status,
+          assignedAt: new Date()
+        },
+        include: { user: true, items: true, deliveryPartner: true }
+      })
+      : await prisma.skincareOrder.update({
+        where: { id: orderId },
+        data: {
+          deliveryPartnerId: partner.id,
+          status: targetOrder.status === 'PENDING' ? 'CONFIRMED' : targetOrder.status,
+          assignedAt: new Date()
+        },
+        include: { user: true, items: true, deliveryPartner: true }
+      });
+
+    // Update Partner status
+    await prisma.deliveryPartner.update({
+      where: { id: partner.id },
+      data: { status: 'BUSY' }
+    });
+
+    // Create Assignment Record
+    const assignment = await prisma.deliveryAssignment.create({
+      data: {
+        deliveryPartnerId: partner.id,
+        foodOrderId: isFood ? orderId : null,
+        skincareOrderId: !isFood ? orderId : null,
+        status: 'ASSIGNED',
+        assignedAt: new Date()
+      }
+    });
+
+    // Create Customer Notification
+    if (targetOrder.userId) {
+      await prisma.notification.create({
+        data: {
+          userId: targetOrder.userId,
+          orderId: targetOrder.id,
+          title: 'Delivery Partner Assigned',
+          message: `${partner.name} (${partner.phone}) has been assigned to your order #${targetOrder.orderNumber}.`,
+          type: 'system'
+        }
+      });
+    }
+
+    // Create Admin Audit Log
+    const adminUser = await prisma.user.findFirst({ where: { role: { name: 'ADMIN' } } });
+    if (adminUser) {
+      await prisma.adminAuditLog.create({
+        data: {
+          adminId: adminUser.id,
+          action: 'ASSIGN_DELIVERY_PARTNER',
+          target: `Order #${targetOrder.orderNumber}`,
+          details: `Assigned partner ${partner.name} (${partner.partnerCode || partner.id.slice(0, 6)})`,
+          date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          color: '#10b981'
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Delivery partner ${partner.name} assigned to order #${targetOrder.orderNumber}`,
+      order: updatedOrder,
+      assignment
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error assigning partner: ' + err.message });
+  }
+});
+
+// 21. POST /api/admin/delivery/orders/:orderId/reassign - Reassign Delivery Partner
+app.post('/api/admin/delivery/orders/:orderId/reassign', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { deliveryPartnerId } = req.body;
+
+    if (!deliveryPartnerId) {
+      return res.status(400).json({ success: false, error: 'deliveryPartnerId is required' });
+    }
+
+    const newPartner = await prisma.deliveryPartner.findUnique({ where: { id: deliveryPartnerId } });
+    if (!newPartner) {
+      return res.status(404).json({ success: false, error: 'New Delivery Partner not found' });
+    }
+
+    let foodOrder = await prisma.foodOrder.findUnique({ where: { id: orderId } });
+    let skincareOrder = null;
+
+    if (!foodOrder) {
+      skincareOrder = await prisma.skincareOrder.findUnique({ where: { id: orderId } });
+    }
+
+    if (!foodOrder && !skincareOrder) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    const isFood = !!foodOrder;
+    const targetOrder = foodOrder || skincareOrder;
+
+    // Mark previous active assignments as REASSIGNED
+    if (isFood) {
+      await prisma.deliveryAssignment.updateMany({
+        where: { foodOrderId: orderId, status: 'ASSIGNED' },
+        data: { status: 'REASSIGNED', unassignedAt: new Date() }
+      });
+    } else {
+      await prisma.deliveryAssignment.updateMany({
+        where: { skincareOrderId: orderId, status: 'ASSIGNED' },
+        data: { status: 'REASSIGNED', unassignedAt: new Date() }
+      });
+    }
+
+    // Set old partner back to AVAILABLE if no other active orders
+    if (targetOrder.deliveryPartnerId) {
+      await prisma.deliveryPartner.update({
+        where: { id: targetOrder.deliveryPartnerId },
+        data: { status: 'AVAILABLE' }
+      });
+    }
+
+    // Update order to new partner
+    const updatedOrder = isFood
+      ? await prisma.foodOrder.update({
+        where: { id: orderId },
+        data: { deliveryPartnerId: newPartner.id, assignedAt: new Date() },
+        include: { user: true, items: true, deliveryPartner: true }
+      })
+      : await prisma.skincareOrder.update({
+        where: { id: orderId },
+        data: { deliveryPartnerId: newPartner.id, assignedAt: new Date() },
+        include: { user: true, items: true, deliveryPartner: true }
+      });
+
+    // Set new partner to BUSY
+    await prisma.deliveryPartner.update({
+      where: { id: newPartner.id },
+      data: { status: 'BUSY' }
+    });
+
+    // Create new Assignment Record
+    const assignment = await prisma.deliveryAssignment.create({
+      data: {
+        deliveryPartnerId: newPartner.id,
+        foodOrderId: isFood ? orderId : null,
+        skincareOrderId: !isFood ? orderId : null,
+        status: 'ASSIGNED',
+        assignedAt: new Date()
+      }
+    });
+
+    // Notify Customer
+    if (targetOrder.userId) {
+      await prisma.notification.create({
+        data: {
+          userId: targetOrder.userId,
+          orderId: targetOrder.id,
+          title: 'Delivery Partner Updated',
+          message: `Your order #${targetOrder.orderNumber} has been reassigned to ${newPartner.name} (${newPartner.phone}).`,
+          type: 'system'
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Order #${targetOrder.orderNumber} reassigned to ${newPartner.name}`,
+      order: updatedOrder,
+      assignment
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error reassigning partner: ' + err.message });
+  }
+});
+
+// 22. POST /api/admin/delivery/orders/:orderId/complete - Mark Delivery Done
+app.post('/api/admin/delivery/orders/:orderId/complete', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    let foodOrder = await prisma.foodOrder.findUnique({ where: { id: orderId } });
+    let skincareOrder = null;
+
+    if (!foodOrder) {
+      skincareOrder = await prisma.skincareOrder.findUnique({ where: { id: orderId } });
+    }
+
+    if (!foodOrder && !skincareOrder) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    const isFood = !!foodOrder;
+    const targetOrder = foodOrder || skincareOrder;
+
+    if (targetOrder.status === 'DELIVERED') {
+      return res.status(400).json({ success: false, error: 'Order is already marked DELIVERED' });
+    }
+
+    const now = new Date();
+
+    // Update Order Status to DELIVERED
+    const updatedOrder = isFood
+      ? await prisma.foodOrder.update({
+        where: { id: orderId },
+        data: { status: 'DELIVERED', deliveredAt: now },
+        include: { user: true, items: true, deliveryPartner: true }
+      })
+      : await prisma.skincareOrder.update({
+        where: { id: orderId },
+        data: { status: 'DELIVERED', deliveredAt: now },
+        include: { user: true, items: true, deliveryPartner: true }
+      });
+
+    // Complete Active Assignments
+    if (isFood) {
+      await prisma.deliveryAssignment.updateMany({
+        where: { foodOrderId: orderId, status: 'ASSIGNED' },
+        data: { status: 'COMPLETED', completedAt: now }
+      });
+    } else {
+      await prisma.deliveryAssignment.updateMany({
+        where: { skincareOrderId: orderId, status: 'ASSIGNED' },
+        data: { status: 'COMPLETED', completedAt: now }
+      });
+    }
+
+    // Set Delivery Partner back to AVAILABLE and increment totalDeliveries
+    if (targetOrder.deliveryPartnerId) {
+      const partner = await prisma.deliveryPartner.findUnique({ where: { id: targetOrder.deliveryPartnerId } });
+      if (partner) {
+        await prisma.deliveryPartner.update({
+          where: { id: partner.id },
+          data: {
+            status: 'AVAILABLE',
+            totalDeliveries: partner.totalDeliveries + 1
+          }
+        });
+
+        // Record Delivery Earning
+        const delFee = Number(targetOrder.deliveryFee || 30.00);
+        await prisma.deliveryPartnerEarning.create({
+          data: {
+            deliveryPartnerId: partner.id,
+            foodOrderId: isFood ? orderId : null,
+            skincareOrderId: !isFood ? orderId : null,
+            orderType: isFood ? 'food' : 'skincare',
+            grossAmount: targetOrder.totalAmount,
+            deliveryFee: delFee.toFixed(2),
+            platformCommission: '0.00',
+            partnerEarning: delFee.toFixed(2),
+            status: 'EARNED',
+            earnedAt: now
+          }
+        });
+      }
+    }
+
+    // Create Notification & Audit Log
+    if (targetOrder.userId) {
+      await prisma.notification.create({
+        data: {
+          userId: targetOrder.userId,
+          orderId: targetOrder.id,
+          title: 'Order Delivered Successfully 🎁',
+          message: `Your order #${targetOrder.orderNumber} has been delivered. Thank you for choosing OfferMatrix!`,
+          type: 'system'
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Order #${targetOrder.orderNumber} completed and marked DELIVERED`,
+      order: updatedOrder
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error completing order delivery: ' + err.message });
+  }
+});
+
+// 23. POST /api/admin/delivery/partners/:id/suspend - Suspend / Unsuspend Delivery Partner
+app.post('/api/admin/delivery/partners/:id/suspend', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isSuspended, reason } = req.body;
+
+    const targetPartner = await prisma.deliveryPartner.findUnique({ where: { id } });
+    if (!targetPartner) {
+      return res.status(404).json({ success: false, error: 'Delivery Partner not found' });
+    }
+
+    const shouldSuspend = typeof isSuspended === 'boolean' ? isSuspended : !targetPartner.isSuspended;
+
+    const updatedPartner = await prisma.deliveryPartner.update({
+      where: { id },
+      data: {
+        isSuspended: shouldSuspend,
+        status: shouldSuspend ? 'SUSPENDED' : 'AVAILABLE'
+      }
+    });
+
+    res.json({
+      success: true,
+      message: `Delivery Partner ${updatedPartner.name} ${shouldSuspend ? 'suspended' : 're-activated'}`,
+      partner: updatedPartner
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error suspending partner: ' + err.message });
+  }
+});
+
+// 24. GET /api/delivery-partner/orders - Orders assigned to partner
+app.get('/api/delivery-partner/orders', async (req, res) => {
+  try {
+    const { partnerId, phone } = req.query;
+
+    let partner = null;
+    if (partnerId) {
+      partner = await prisma.deliveryPartner.findUnique({ where: { id: partnerId } });
+    } else if (phone) {
+      partner = await prisma.deliveryPartner.findFirst({ where: { phone } });
+    } else {
+      partner = await prisma.deliveryPartner.findFirst({ where: { status: { in: ['AVAILABLE', 'BUSY'] } } });
+    }
+
+    if (!partner) {
+      return res.status(404).json({ success: false, error: 'Delivery Partner not found' });
+    }
+
+    const [foodOrders, skincareOrders] = await Promise.all([
+      prisma.foodOrder.findMany({
+        where: { deliveryPartnerId: partner.id },
+        include: { user: true, items: true },
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.skincareOrder.findMany({
+        where: { deliveryPartnerId: partner.id },
+        include: { user: true, items: true },
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
+
+    res.json({
+      success: true,
+      partner: { id: partner.id, name: partner.name, phone: partner.phone, vehicle: partner.vehicle, rating: partner.rating },
+      orders: [...foodOrders, ...skincareOrders]
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error fetching partner orders: ' + err.message });
+  }
+});
+
+// 25. POST /api/delivery-partner/orders/:id/status - Update Order Delivery Status
+app.post('/api/delivery-partner/orders/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ success: false, error: 'status is required' });
+    }
+
+    const validStatuses = ['CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'PICKED_UP', 'ON_THE_WAY', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, error: `Invalid status '${status}'` });
+    }
+
+    let foodOrder = await prisma.foodOrder.findUnique({ where: { id } });
+    let skincareOrder = null;
+
+    if (!foodOrder) {
+      skincareOrder = await prisma.skincareOrder.findUnique({ where: { id } });
+    }
+
+    if (!foodOrder && !skincareOrder) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    const isFood = !!foodOrder;
+    const now = new Date();
+    const updateData = { status };
+
+    if (status === 'PICKED_UP') updateData.pickedUpAt = now;
+    if (status === 'ON_THE_WAY' || status === 'SHIPPED') updateData.onTheWayAt = now;
+    if (status === 'DELIVERED') updateData.deliveredAt = now;
+
+    const updatedOrder = isFood
+      ? await prisma.foodOrder.update({
+        where: { id },
+        data: updateData,
+        include: { user: true, items: true, deliveryPartner: true }
+      })
+      : await prisma.skincareOrder.update({
+        where: { id },
+        data: updateData,
+        include: { user: true, items: true, deliveryPartner: true }
+      });
+
+    if (status === 'DELIVERED' && updatedOrder.deliveryPartnerId) {
+      await prisma.deliveryPartner.update({
+        where: { id: updatedOrder.deliveryPartnerId },
+        data: { status: 'AVAILABLE' }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Order #${updatedOrder.orderNumber} status updated to '${status}'`,
+      order: updatedOrder
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error updating delivery status: ' + err.message });
+  }
+});
+
+// 26. POST /api/delivery-partner/location - Store Partner Live GPS Coordinates
+app.post('/api/delivery-partner/location', async (req, res) => {
+  try {
+    const { deliveryPartnerId, latitude, longitude, accuracy, timestamp } = req.body;
+
+    if (!deliveryPartnerId || typeof latitude !== 'number' || typeof longitude !== 'number') {
+      return res.status(400).json({ success: false, error: 'Valid deliveryPartnerId, latitude, and longitude required' });
+    }
+
+    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+      return res.status(400).json({ success: false, error: 'Latitude or longitude out of geographic bounds' });
+    }
+
+    const locationLog = await prisma.deliveryPartnerLocation.create({
+      data: {
+        deliveryPartnerId,
+        latitude,
+        longitude,
+        accuracy: typeof accuracy === 'number' ? accuracy : 10,
+        recordedAt: timestamp ? new Date(timestamp) : new Date()
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Location recorded successfully',
+      location: locationLog
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error recording location: ' + err.message });
+  }
+});
+
+// 27. GET /api/orders/:id/tracking - Live Tracking Info with Real Location Check
+app.get('/api/orders/:id/tracking', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    let foodOrder = await prisma.foodOrder.findUnique({
+      where: { id },
+      include: { items: true, deliveryPartner: { include: { locations: { orderBy: { recordedAt: 'desc' }, take: 1 } } } }
+    });
+
+    let skincareOrder = null;
+    if (!foodOrder) {
+      skincareOrder = await prisma.skincareOrder.findUnique({
+        where: { id },
+        include: { items: true, deliveryPartner: { include: { locations: { orderBy: { recordedAt: 'desc' }, take: 1 } } } }
+      });
+    }
+
+    if (!foodOrder && !skincareOrder) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    const order = foodOrder || skincareOrder;
+
+    if (order.userId !== req.user.userId && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Access denied: You cannot view tracking for another user' });
+    }
+
+    const partner = order.deliveryPartner;
+    const latestLoc = partner && partner.locations && partner.locations.length > 0 ? partner.locations[0] : null;
+
+    const locationAvailable = !!latestLoc;
+
+    res.json({
+      success: true,
+      tracking: {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        deliveryPartner: partner ? {
+          id: partner.id,
+          name: partner.name,
+          phone: partner.phone,
+          avatar: partner.avatar,
+          partnerCode: partner.partnerCode,
+          vehicle: partner.vehicle || partner.vehicleModel,
+          rating: partner.rating
+        } : null,
+        locationAvailable,
+        locationMessage: locationAvailable ? 'Live rider GPS coordinates available' : 'Live location unavailable.',
+        location: locationAvailable ? {
+          latitude: latestLoc.latitude,
+          longitude: latestLoc.longitude,
+          accuracy: latestLoc.accuracy,
+          recordedAt: latestLoc.recordedAt
+        } : null,
+        routeAvailable: false,
+        eta: partner ? '12 - 18 mins' : 'Partner assigning soon',
+        assignedAt: order.assignedAt,
+        pickedUpAt: order.pickedUpAt || order.shippedAt,
+        onTheWayAt: order.onTheWayAt,
+        deliveredAt: order.deliveredAt
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error retrieving order tracking: ' + err.message });
+  }
+});
+
+// 28. POST /api/orders/skincare - Place Skincare Order into PostgreSQL
+app.post('/api/orders/skincare', authenticateToken, async (req, res) => {
+  try {
+    const { items, storePlatform, paymentMethod, couponCode, deliveryAddress } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, error: 'Skincare order must contain at least one item' });
+    }
+
+    let subtotal = 0;
+    const calculatedItems = items.map(it => {
+      const uPrice = Number(it.unitPrice || it.price || 499.00);
+      const qty = Math.max(1, parseInt(it.quantity || it.qty || 1, 10));
+      const lTotal = uPrice * qty;
+      subtotal += lTotal;
+      return {
+        productId: it.productId || null,
+        name: it.name || it.title || 'Skincare Product',
+        brand: it.brand || 'Choice Legacy',
+        quantity: qty,
+ unitPrice: uPrice.toFixed(2),
+        totalPrice: lTotal.toFixed(2),
+        image: it.image || it.img || 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=120&q=80'
+      };
+    });
+
+    const deliveryFee = 50.00;
+    const count = await prisma.skincareOrder.count();
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const orderNumber = `SKIN-${dateStr}-${String(count + 1).padStart(4, '0')}`;
+
+    const newSkincareOrder = await prisma.skincareOrder.create({
+      data: {
+        orderNumber,
+        userId: req.user.userId,
+        storePlatform: storePlatform || 'choice_legacy',
+        status: 'PENDING',
+        subtotal: subtotal.toFixed(2),
+        deliveryFee: deliveryFee.toFixed(2),
+        discount: '0.00',
+        couponCode: couponCode || null,
+        paymentMethod: paymentMethod || 'bKash',
+        totalAmount: (subtotal + deliveryFee).toFixed(2),
+        deliveryAddress: deliveryAddress || 'Dhanmondi, Dhaka',
+        items: { create: calculatedItems }
+      },
+      include: { items: true, deliveryPartner: true }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Skincare order placed successfully!',
+      order: newSkincareOrder
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error creating skincare order: ' + err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 Connected to PostgreSQL DB: offermatrix (25 active endpoints)`);
+  console.log(`📊 Connected to PostgreSQL DB: offermatrix (28 active endpoints)`);
 });
