@@ -193,6 +193,74 @@ export default function UserDashboard({
 
   const [isCouponsModalOpen, setIsCouponsModalOpen] = useState(false);
   const [couponCategoryFilter, setCouponCategoryFilter] = useState('all');
+  const [viewOrderDetailsModal, setViewOrderDetailsModal] = useState(null);
+
+  // Deliveryman Chatbox State
+  const [activeDeliverymanChat, setActiveDeliverymanChat] = useState(null);
+  const [deliverymanChatInput, setDeliverymanChatInput] = useState('');
+  const [deliverymanChatHistory, setDeliverymanChatHistory] = useState([
+    { sender: 'rider', text: "Hello Setu! 👋 I'm your delivery rider Rahim. I have picked up your food order and I am currently on the way!", time: '1:48 PM' },
+    { sender: 'rider', text: "Estimated arrival time: 10-12 minutes. Please keep your phone reachable. 🛵", time: '1:49 PM' }
+  ]);
+
+  const handleSendDeliverymanMessage = (customText) => {
+    const textToSend = customText || deliverymanChatInput;
+    if (!textToSend || !textToSend.trim()) return;
+
+    const userMsg = {
+      sender: 'me',
+      text: textToSend.trim(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setDeliverymanChatHistory(prev => [...prev, userMsg]);
+    setDeliverymanChatInput('');
+
+    // Trigger rider automated response after 1.2s
+    setTimeout(() => {
+      const riderReplies = [
+        "Got it! I am near your location now, arriving in 2-3 minutes! 🛵💨",
+        "Sure thing! I will call you as soon as I arrive at your gate. 📞",
+        "Don't worry, your food is hot and safely packed in my thermal delivery bag! 🍱🔥",
+        "Understood! Thank you for the instructions."
+      ];
+      const randomReply = riderReplies[Math.floor(Math.random() * riderReplies.length)];
+      setDeliverymanChatHistory(prev => [...prev, {
+        sender: 'rider',
+        text: randomReply,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }]);
+    }, 1200);
+  };
+
+  useEffect(() => {
+    const handleOpenDeliverymanChatEvent = (e) => {
+      const dealTitle = e.detail?.dealTitle || 'Food Order';
+      const newOrderId = `ORD-${Math.floor(10000 + Math.random() * 90000)}-FD`;
+      setDeliverymanChatHistory([
+        {
+          sender: 'rider',
+          text: `Hello Setu! 👋 I'm your delivery rider Rahim. I have picked up your food order for "${dealTitle}" and I am currently on the way! 🛵`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        },
+        {
+          sender: 'rider',
+          text: "Estimated arrival time: 10-12 minutes. Please keep your phone reachable. 📦",
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setActiveDeliverymanChat({
+        name: 'Rahim Ahmed (Delivery Rider)',
+        phone: '+880 1712 345678',
+        vehicle: 'Honda Dream 110 (Motorcycle)',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+        orderId: newOrderId
+      });
+    };
+
+    window.addEventListener('open-deliveryman-chat', handleOpenDeliverymanChatEvent);
+    return () => window.removeEventListener('open-deliveryman-chat', handleOpenDeliverymanChatEvent);
+  }, []);
 
   const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
   const [reviewCategoryFilter, setReviewCategoryFilter] = useState('all');
@@ -2355,7 +2423,33 @@ export default function UserDashboard({
 
                         <div className="food-deal-save-row">
                           <span className="food-save-text">You Save ৳61</span>
-                          <span className="food-app-tag tag-fp" onClick={(e) => { e.stopPropagation(); onOpenFoodpanda && onOpenFoodpanda(); }}>foodpanda</span>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.dispatchEvent(new CustomEvent('open-deliveryman-chat', {
+                                  detail: { dealTitle: 'Chicken Biryani' }
+                                }));
+                                onToast('⚡ Food order placed! Live chatbox with Deliveryman opened 🛵');
+                              }}
+                              style={{
+                                background: '#ff2b70',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '4px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}
+                            >
+                              💬 Order &amp; Chat
+                            </button>
+                            <span className="food-app-tag tag-fp" onClick={(e) => { e.stopPropagation(); onOpenFoodpanda && onOpenFoodpanda(); }}>foodpanda</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2408,7 +2502,33 @@ export default function UserDashboard({
 
                         <div className="food-deal-save-row">
                           <span className="food-save-text">You Save ৳150</span>
-                          <span className="food-app-tag tag-foodie" onClick={(e) => { e.stopPropagation(); onOpenFoodi && onOpenFoodi(); }}>Foodi</span>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.dispatchEvent(new CustomEvent('open-deliveryman-chat', {
+                                  detail: { dealTitle: 'Farmhouse Pizza' }
+                                }));
+                                onToast('⚡ Food order placed! Live chatbox with Deliveryman opened 🛵');
+                              }}
+                              style={{
+                                background: '#ff2b70',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '4px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}
+                            >
+                              💬 Order &amp; Chat
+                            </button>
+                            <span className="food-app-tag tag-foodie" onClick={(e) => { e.stopPropagation(); onOpenFoodi && onOpenFoodi(); }}>Foodi</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2461,7 +2581,33 @@ export default function UserDashboard({
 
                         <div className="food-deal-save-row">
                           <span className="food-save-text">You Save ৳121</span>
-                          <span className="food-app-tag tag-pathao" onClick={(e) => { e.stopPropagation(); onOpenPathao && onOpenPathao(); }}>Pathao Food</span>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.dispatchEvent(new CustomEvent('open-deliveryman-chat', {
+                                  detail: { dealTitle: 'Beef Burger Meal' }
+                                }));
+                                onToast('⚡ Food order placed! Live chatbox with Deliveryman opened 🛵');
+                              }}
+                              style={{
+                                background: '#ff2b70',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '4px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}
+                            >
+                              💬 Order &amp; Chat
+                            </button>
+                            <span className="food-app-tag tag-pathao" onClick={(e) => { e.stopPropagation(); onOpenPathao && onOpenPathao(); }}>Pathao Food</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2512,7 +2658,33 @@ export default function UserDashboard({
 
                         <div className="food-deal-save-row">
                           <span className="food-save-text">You Save ৳90</span>
-                          <span className="food-app-tag tag-hungry">Hungry Naki</span>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.dispatchEvent(new CustomEvent('open-deliveryman-chat', {
+                                  detail: { dealTitle: 'Chicken Chowmein' }
+                                }));
+                                onToast('⚡ Food order placed! Live chatbox with Deliveryman opened 🛵');
+                              }}
+                              style={{
+                                background: '#ff2b70',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '4px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}
+                            >
+                              💬 Order &amp; Chat
+                            </button>
+                            <span className="food-app-tag tag-hungry">Hungry Naki</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -3019,7 +3191,19 @@ export default function UserDashboard({
                             </div>
                             <div className="rider-action-btns">
                               <button className="rider-btn-circle" onClick={() => onToast('Calling delivery partner...')}>📞</button>
-                              <button className="rider-btn-circle" onClick={() => onToast('Opening live chat...')}>💬</button>
+                              <button
+                                className="rider-btn-circle"
+                                onClick={() => setActiveDeliverymanChat({
+                                  name: activeSummary.driverName || 'Rahim Ahmed (Delivery Rider)',
+                                  phone: activeSummary.driverPhone || '+880 1712 345678',
+                                  vehicle: activeSummary.riderVehicle || 'Honda Dream 110 (Motorcycle)',
+                                  avatar: activeSummary.riderImg || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+                                  orderId: activeSummary.orderId
+                                })}
+                                title="Chat with Deliveryman"
+                              >
+                                💬
+                              </button>
                             </div>
                           </div>
                         ) : (
@@ -7153,7 +7337,19 @@ export default function UserDashboard({
       {!isLiveChatOpen && (
         <button
           className="floating-live-chat-btn animate-fade-in"
-          onClick={() => setIsLiveChatOpen(true)}
+          onClick={() => {
+            if (activeTab === 'food' || orderCategoryFilter === 'food') {
+              setActiveDeliverymanChat({
+                name: 'Rahim Ahmed (Delivery Rider)',
+                phone: '+880 1712 345678',
+                vehicle: 'Honda Dream 110 (Motorcycle)',
+                avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+                orderId: 'ORD-98421-FD'
+              });
+            } else {
+              setIsLiveChatOpen(true);
+            }
+          }}
           style={{
             position: 'fixed',
             bottom: '28px',
@@ -7376,6 +7572,170 @@ export default function UserDashboard({
           </form>
         </div>
       )}
-    </div>
+      {/* ================= LIVE CHATBOX WITH DELIVERYMAN / RIDER MODAL ================= */}
+      {activeDeliverymanChat && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          width: '380px',
+          height: '520px',
+          maxHeight: '90vh',
+          maxWidth: '92vw',
+          background: '#ffffff',
+          borderRadius: '20px',
+          boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.35)',
+          zIndex: 100000,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          border: '1.5px solid #fecdd3',
+          fontFamily: "'Inter', sans-serif"
+        }}>
+          {/* Deliveryman Chat Header */}
+          <div style={{
+            background: 'linear-gradient(135deg, #ff2b70 0%, #ff528b 100%)',
+            padding: '14px 16px',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justify: 'space-between'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <img
+                src={activeDeliverymanChat.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"}
+                alt="Deliveryman"
+                style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #ffffff' }}
+              />
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 900, lineHeight: 1.1 }}>
+                  {activeDeliverymanChat.name || 'Rahim Ahmed (Delivery Rider)'}
+                </div>
+                <div style={{ fontSize: '11px', opacity: 0.9, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#4ade80' }}></span>
+                  <span>Online • On the way 🛵</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setActiveDeliverymanChat(null)}
+              style={{ background: 'rgba(255, 255, 255, 0.2)', border: 'none', color: '#ffffff', width: '28px', height: '28px', borderRadius: '50%', cursor: 'pointer', fontSize: '14px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Delivery Rider Info Sub-bar */}
+          <div style={{ background: '#fff0f5', padding: '8px 14px', borderBottom: '1px solid #fecdd3', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: '#be185d', fontWeight: 700 }}>
+            <span>🛵 {activeDeliverymanChat.vehicle || 'Honda Dream 110'}</span>
+            <span>📞 {activeDeliverymanChat.phone || '+880 1712 345678'}</span>
+          </div>
+
+          {/* Messages Body Container */}
+          <div style={{ flex: 1, padding: '14px', overflowY: 'auto', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {deliverymanChatHistory.map((msg, idx) => {
+              const isRider = msg.sender === 'rider';
+              return (
+                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: isRider ? 'flex-start' : 'flex-end' }}>
+                  <div style={{
+                    background: isRider ? '#ffffff' : '#ff2b70',
+                    color: isRider ? '#0f172a' : '#ffffff',
+                    padding: '9px 13px',
+                    borderRadius: isRider ? '14px 14px 14px 2px' : '14px 14px 2px 14px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    maxWidth: '82%',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                    border: isRider ? '1px solid #e2e8f0' : 'none',
+                    lineHeight: '1.4'
+                  }}>
+                    {msg.text}
+                  </div>
+                  <span style={{ fontSize: '9.5px', color: '#94a3b8', marginTop: '3px', padding: '0 2px' }}>
+                    {msg.time}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Quick Preset Reply Chips */}
+          <div style={{ background: '#ffffff', padding: '8px 10px 4px 10px', borderTop: '1px solid #f1f5f9' }}>
+            <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+              {[
+                "Where are you now? 🛵",
+                "Call me upon arrival 📞",
+                "Leave at reception 🏠",
+                "Bring extra napkins 🧻",
+                "Is food packed hot? 🍱"
+              ].map((chip, cIdx) => (
+                <button
+                  key={cIdx}
+                  onClick={() => handleSendDeliverymanMessage(chip)}
+                  style={{
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '99px',
+                    padding: '4px 10px',
+                    fontSize: '10.5px',
+                    fontWeight: 700,
+                    color: '#334155',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Input Footer Bar */}
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleSendDeliverymanMessage(); }}
+            style={{ padding: '10px 12px', background: '#ffffff', borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <input
+              type="text"
+              placeholder="Type message to deliveryman..."
+              value={deliverymanChatInput}
+              onChange={(e) => setDeliverymanChatInput(e.target.value)}
+              style={{
+                flex: 1,
+                padding: '9px 14px',
+                borderRadius: '99px',
+                border: '1.5px solid #cbd5e1',
+                fontSize: '12px',
+                outline: 'none',
+                background: '#f8fafc'
+              }}
+            />
+
+            <button
+              type="submit"
+              style={{
+                background: '#ff2b70',
+                color: '#ffffff',
+                border: 'none',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                fontWeight: 800,
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(255, 43, 112, 0.3)'
+              }}
+            >
+              🚀
+            </button>
+          </form>
+        </div>
+      )}
+      </div>
   );
 }

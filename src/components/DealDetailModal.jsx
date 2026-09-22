@@ -281,6 +281,11 @@ export default function DealDetailModal({
       });
     }
     onToast(`⚡ Order placed via ${selectedApp} with ${selectedPayment}! Total: ৳${finalPayable.toLocaleString()}`);
+    if (deal.category === 'food' || !deal.category || deal.type === 'food') {
+      window.dispatchEvent(new CustomEvent('open-deliveryman-chat', {
+        detail: { dealTitle: deal.brand || deal.title || deal.route || 'Food Order' }
+      }));
+    }
     onClose();
   };
 
