@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import FoodPlatformView from './FoodPlatformView';
 import OrdersManagementView from './OrdersManagementView';
 import EarningsPayoutsView from './EarningsPayoutsView';
 import PerformanceAnalyticsView from './PerformanceAnalyticsView';
 import RatingsReviewsView from './RatingsReviewsView';
 import ReportsAnalyticsView from './ReportsAnalyticsView';
+import SettingsView from './SettingsView';
 import SuspendedPartnersView from './SuspendedPartnersView';
 import {
   Percent, Menu, Search, Bell, User, LayoutDashboard, Users, Bike, MapPin,
@@ -361,11 +363,12 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
                 { name: 'Skincare', icon: Sparkles, color: '#02a9ea' }
               ].map((item) => {
                 const IconComponent = item.icon;
+                const isActive = activeSidebarItem === item.name;
                 return (
                   <li key={item.name}>
                     <button
                       onClick={() => {
-                        if (onBack) onBack();
+                        setActiveSidebarItem(item.name);
                         handleAction(`Navigate to ${item.name}`);
                       }}
                       style={{
@@ -376,14 +379,16 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
                         padding: '9px 14px',
                         borderRadius: '10px',
                         border: 'none',
-                        background: 'transparent',
-                        color: '#475569',
-                        fontWeight: 600,
+                        background: isActive ? '#ff2b70' : 'transparent',
+                        color: isActive ? '#ffffff' : '#475569',
+                        fontWeight: isActive ? 800 : 600,
                         fontSize: '13px',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        boxShadow: isActive ? '0 4px 12px rgba(255, 43, 112, 0.25)' : 'none'
                       }}
                     >
-                      <IconComponent size={17} color={item.color} />
+                      <IconComponent size={17} color={isActive ? '#ffffff' : item.color} />
                       <span>{item.name}</span>
                     </button>
                   </li>
@@ -1806,6 +1811,16 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
             /* ================= REPORTS & ANALYTICS VIEW ================= */
             <ReportsAnalyticsView onToast={onToast} />
+
+          ) : activeSidebarItem === 'Settings' ? (
+
+            /* ================= SETTINGS VIEW ================= */
+            <SettingsView onToast={onToast} />
+
+          ) : activeSidebarItem === 'Food' ? (
+
+            /* ================= FOOD PLATFORM VIEW ================= */
+            <FoodPlatformView onToast={onToast} />
 
           ) : activeSidebarItem === 'Delivery Partners' ? (
 
