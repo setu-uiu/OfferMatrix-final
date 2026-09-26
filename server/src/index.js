@@ -109,10 +109,29 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 
+// Helper to normalize Bangladesh phone numbers
+export function normalizeBDPhone(phone) {
+  if (!phone) return null;
+  const cleaned = phone.trim();
+  if (!cleaned) return null;
+  const digitsOnly = cleaned.replace(/\D/g, '');
+  if (!digitsOnly) return null;
+  if (digitsOnly.startsWith('8801')) {
+    return '01' + digitsOnly.slice(4);
+  }
+  if (digitsOnly.startsWith('1') && digitsOnly.length === 10) {
+    return '0' + digitsOnly;
+  }
+  if (digitsOnly.startsWith('01') && digitsOnly.length === 11) {
+    return digitsOnly;
+  }
+  return cleaned;
+}
+
 // 1. Register User
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password, confirmPassword, roleName } = req.body;
+    const { name, email, password, confirmPassword, phone, roleName } = req.body;
 
     if (!name || !email || !password || !confirmPassword) {
       return res.status(400).json({ success: false, error: 'Name, email, password, and confirmPassword are required' });
@@ -136,6 +155,17 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ success: false, error: 'An account with this email address already exists' });
     }
 
+    let normalizedPhone = null;
+    if (phone) {
+      normalizedPhone = normalizeBDPhone(phone);
+      if (normalizedPhone) {
+        const existingPhone = await prisma.user.findFirst({ where: { phone: normalizedPhone } });
+        if (existingPhone) {
+          return res.status(400).json({ success: false, error: 'An account with this phone number already exists' });
+        }
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
@@ -150,6 +180,7 @@ app.post('/api/auth/register', async (req, res) => {
       data: {
         name: name.trim(),
         email: normalizedEmail,
+        phone: normalizedPhone,
         password: hashedPassword,
         isEmailVerified: false,
         verificationToken,
@@ -634,6 +665,7 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
     if (selectedPay === 'bKash') paymentDiscount = serverSubtotal * 0.05;
     else if (selectedPay === 'Nagad') paymentDiscount = serverSubtotal * 0.07;
     else if (selectedPay === 'Card' || selectedPay === 'Visa / Card') paymentDiscount = serverSubtotal * 0.10;
+    else if (selectedPay === 'Rocket') paymentDiscount = serverSubtotal * 0.03;
 
     const deliveryFee = 30.00;
     const totalDiscount = couponDiscount + paymentDiscount;
@@ -690,12 +722,68 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
 // 2. Get User Orders (GET /api/orders)
 app.get('/api/orders', authenticateToken, async (req, res) => {
   try {
-    const orders = await prisma.foodOrder.findMany({
-      where: { userId: req.user.userId },
-      include: { items: true, deliveryPartner: true },
-      orderBy: { createdAt: 'desc' }
-    });
-    res.json({ success: true, orders });
+    const [foodOrders, skincareOrders, rideTrips] = await Promise.all([
+      prisma.foodOrder.findMany({
+        where: { userId: req.user.userId },
+        include: { items: true, deliveryPartner: true },
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.skincareOrder.findMany({
+        where: { userId: req.user.userId },
+        include: { items: true, deliveryPartner: true },
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.rideTrip.findMany({
+        where: { userId: req.user.userId },
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
+
+    const storeMap = {
+      choice_legacy: 'Choice Legacy Store',
+      kirei: 'Kirei BD Store',
+      makeup_chari: 'Makeup Chari Store',
+      uber: 'Uber BD',
+      obhai: 'OBHAI Rides',
+      indrive: 'InDriver BD',
+      pathao: 'Pathao Rides'
+    };
+
+    const formattedFood = foodOrders.map(o => ({ ...o, category: 'food' }));
+    const formattedSkincare = skincareOrders.map(o => ({
+      ...o,
+      category: 'skincare',
+      merchantName: o.storePlatform ? (storeMap[o.storePlatform] || o.storePlatform.replace(/_/g, ' ').toUpperCase()) : 'Choice Legacy Store'
+    }));
+
+    const formattedRides = rideTrips.map(r => ({
+      ...r,
+      category: 'ride',
+      orderNumber: r.tripNumber,
+      merchantName: storeMap[r.platform?.toLowerCase()] || 'Uber BD',
+      totalAmount: r.finalFare,
+      subtotal: r.baseFare,
+      deliveryFee: '0.00',
+      items: [
+        {
+          name: `${r.carType || 'Car / Sedan (AC)'} (${r.pickup} → ${r.destination})`,
+          quantity: 1,
+          unitPrice: r.finalFare,
+          image: r.platform === 'pathao' ? 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=120&q=80' : 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=120&q=80'
+        }
+      ],
+      deliveryPartner: r.driverName ? {
+        name: r.driverName,
+        phone: r.driverPhone || '+880 1819 876543',
+        vehicle: r.vehicleModel ? `${r.vehicleModel}${r.vehicleRegNumber ? ` (${r.vehicleRegNumber})` : ''}` : 'Sedan Car (AC)',
+        rating: r.driverRating || 4.9,
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80'
+      } : null
+    }));
+
+    const combinedOrders = [...formattedFood, ...formattedSkincare, ...formattedRides].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.json({ success: true, orders: combinedOrders });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Error fetching orders: ' + err.message });
   }
@@ -757,6 +845,207 @@ app.post('/api/orders/:id/cancel', authenticateToken, async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Error cancelling order: ' + err.message });
+  }
+});
+
+// 4b. POST /api/rides - Create a Ride Trip
+app.post('/api/rides', authenticateToken, async (req, res) => {
+  try {
+    const { platform, pickup, destination, carType, baseFare, discount, finalFare, promoCode, paymentMethod, distanceKm, durationMins } = req.body;
+
+    if (!pickup || !destination || !platform) {
+      return res.status(400).json({ success: false, error: 'Pickup, destination, and platform are required' });
+    }
+
+    // Server-side validation - don't trust frontend fare
+    const allowedPlatforms = ['uber', 'obhai', 'indrive', 'pathao', 'shohoz'];
+    const normalizedPlatform = (platform || 'uber').toLowerCase();
+
+    const count = await prisma.rideTrip.count();
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const tripNumber = `RIDE-${dateStr}-${String(count + 1).padStart(4, '0')}`;
+
+    const serverBaseFare = Math.max(50, Number(baseFare) || 200);
+    const serverDiscount = Math.max(0, Number(discount) || 0);
+    const serverFinalFare = Math.max(50, serverBaseFare - serverDiscount);
+
+    // Server-side payment method validation
+    const validPaymentMethods = ['Cash', 'Cash on Delivery', 'bKash', 'Nagad', 'Rocket', 'Card', 'Visa / Card'];
+    let normalizedPayment = validPaymentMethods.includes(paymentMethod) ? paymentMethod : 'Cash';
+    if (normalizedPayment === 'Visa / Card') normalizedPayment = 'Card';
+    if (normalizedPayment === 'COD') normalizedPayment = 'Cash on Delivery';
+
+    const newTrip = await prisma.rideTrip.create({
+      data: {
+        tripNumber,
+        userId: req.user.userId,
+        platform: normalizedPlatform,
+        pickup: pickup || 'Dhaka',
+        destination: destination || 'Dhaka',
+        distanceKm: distanceKm ? Number(distanceKm) : null,
+        durationMins: durationMins ? Number(durationMins) : null,
+        carType: carType || 'Car / Sedan (AC)',
+        baseFare: serverBaseFare.toFixed(2),
+        discount: serverDiscount.toFixed(2),
+        finalFare: serverFinalFare.toFixed(2),
+        promoCode: promoCode || null,
+        status: 'REQUESTED',
+        paymentMethod: normalizedPayment
+      },
+      include: { user: true }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Ride trip requested successfully!',
+      trip: newTrip
+    });
+  } catch (err) {
+    console.error('Create Ride Error:', err);
+    res.status(500).json({ success: false, error: 'Server error creating ride: ' + err.message });
+  }
+});
+
+// 4c. GET /api/rides - Get User Ride Trips
+app.get('/api/rides', authenticateToken, async (req, res) => {
+  try {
+    const trips = await prisma.rideTrip.findMany({
+      where: { userId: req.user.userId },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, trips });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error fetching ride trips: ' + err.message });
+  }
+});
+
+// 4d. GET /api/rides/:id - Get a Single Ride Trip
+app.get('/api/rides/:id', authenticateToken, async (req, res) => {
+  try {
+    const trip = await prisma.rideTrip.findUnique({ where: { id: req.params.id } });
+    if (!trip) return res.status(404).json({ success: false, error: 'Trip not found' });
+    if (trip.userId !== req.user.userId) return res.status(403).json({ success: false, error: 'Access denied' });
+    res.json({ success: true, trip });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error fetching trip: ' + err.message });
+  }
+});
+
+// 4e. POST /api/rides/:id/assign-driver - Assign Driver to Ride Trip
+app.post('/api/rides/:id/assign-driver', async (req, res) => {
+  try {
+    const { driverName, driverPhone, vehicleModel, vehicleRegNumber, driverRating, status } = req.body;
+    const trip = await prisma.rideTrip.findUnique({ where: { id: req.params.id } });
+    if (!trip) {
+      return res.status(404).json({ success: false, error: 'Ride trip not found' });
+    }
+
+    const sampleDrivers = [
+      { name: 'Tanvir Hossain', phone: '+880 1819 876543', model: 'Toyota Premio (AC)', reg: 'DHAKA-METRO-GA-11-2026', rating: 4.9 },
+      { name: 'Kamrul Islam', phone: '+880 1911 223344', model: 'Honda Grace Hybrid', reg: 'DHAKA-METRO-GA-15-8832', rating: 4.8 },
+      { name: 'Shakil Chowdhury', phone: '+880 1612 556677', model: 'Nissan Sunny', reg: 'DHAKA-METRO-GA-09-4411', rating: 4.9 }
+    ];
+    const pickedDriver = sampleDrivers[Math.floor(Math.random() * sampleDrivers.length)];
+
+    const assignedName = driverName || pickedDriver.name;
+    const assignedPhone = driverPhone || pickedDriver.phone;
+    const assignedModel = vehicleModel || pickedDriver.model;
+    const assignedReg = vehicleRegNumber || pickedDriver.reg;
+    const assignedRating = driverRating || pickedDriver.rating;
+    const newStatus = status || 'DRIVER_ASSIGNED';
+
+    const updatedTrip = await prisma.rideTrip.update({
+      where: { id: trip.id },
+      data: {
+        driverName: assignedName,
+        driverPhone: assignedPhone,
+        vehicleModel: assignedModel,
+        vehicleRegNumber: assignedReg,
+        driverRating: assignedRating,
+        status: newStatus
+      }
+    });
+
+    // Create Notification for User
+    await prisma.notification.create({
+      data: {
+        userId: trip.userId,
+        orderId: trip.id,
+        title: '🚗 Driver Assigned',
+        message: `Driver ${assignedName} (${assignedModel} • ${assignedReg}) has accepted your ${trip.platform.toUpperCase()} ride #${trip.tripNumber}!`,
+        type: 'ride'
+      }
+    });
+
+    res.json({
+      success: true,
+      message: `Driver ${assignedName} assigned to trip #${trip.tripNumber}`,
+      trip: updatedTrip
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error assigning driver to ride: ' + err.message });
+  }
+});
+
+// 4f. POST /api/rides/:id/status - Update Ride Trip Status
+app.post('/api/rides/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!status) {
+      return res.status(400).json({ success: false, error: 'Status is required' });
+    }
+    const validRideStatuses = ['REQUESTED', 'CONFIRMED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVING', 'PICKED_UP', 'IN_TRIP', 'COMPLETED', 'CANCELLED'];
+    if (!validRideStatuses.includes(status)) {
+      return res.status(400).json({ success: false, error: `Invalid ride status '${status}'` });
+    }
+
+    const trip = await prisma.rideTrip.findUnique({ where: { id: req.params.id } });
+    if (!trip) {
+      return res.status(404).json({ success: false, error: 'Ride trip not found' });
+    }
+
+    const updatedTrip = await prisma.rideTrip.update({
+      where: { id: trip.id },
+      data: { status }
+    });
+
+    // Notifications for Ride Status Transitions
+    let notifTitle = '';
+    let notifMsg = '';
+
+    if (status === 'DRIVER_ARRIVING') {
+      notifTitle = '🚖 Driver Arriving';
+      notifMsg = `Driver ${trip.driverName || 'Driver'} is arriving at ${trip.pickup}!`;
+    } else if (status === 'IN_TRIP' || status === 'PICKED_UP') {
+      notifTitle = '📍 Ride Started';
+      notifMsg = `You are on your way to ${trip.destination} with ${trip.driverName || 'your driver'}.`;
+    } else if (status === 'COMPLETED') {
+      notifTitle = '🎉 Ride Completed';
+      notifMsg = `Your ${trip.platform.toUpperCase()} trip #${trip.tripNumber} to ${trip.destination} is complete. Total fare: ৳${trip.finalFare}.`;
+    } else if (status === 'CANCELLED') {
+      notifTitle = '❌ Ride Cancelled';
+      notifMsg = `Your ${trip.platform.toUpperCase()} trip #${trip.tripNumber} has been cancelled.`;
+    }
+
+    if (notifTitle) {
+      await prisma.notification.create({
+        data: {
+          userId: trip.userId,
+          orderId: trip.id,
+          title: notifTitle,
+          message: notifMsg,
+          type: 'ride'
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Trip #${trip.tripNumber} status updated to ${status}`,
+      trip: updatedTrip
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error updating ride status: ' + err.message });
   }
 });
 
@@ -924,14 +1213,28 @@ app.get('/api/deals/skincare', async (req, res) => {
   }
 });
 
-// 7. Offers API (Platform & Flash Offers)
+// 7. Offers API (Platform & Flash Offers - Centralized PostgreSQL Source of Truth)
 app.get('/api/offers', async (req, res) => {
   try {
     let { platform } = req.query;
     if (platform === 'pathao') platform = 'pathao_food';
     if (platform === 'indriver') platform = 'indrive';
-    const where = platform ? { platform } : {};
-    const offers = await prisma.offer.findMany({ where });
+
+    let where = {};
+    if (platform) {
+      const lowerPlat = platform.toLowerCase();
+      where = {
+        OR: [
+          { platform: { equals: lowerPlat, mode: 'insensitive' } },
+          { platform: { contains: lowerPlat, mode: 'insensitive' } },
+          { platform: { equals: 'all', mode: 'insensitive' } }
+        ]
+      };
+    }
+    const offers = await prisma.offer.findMany({
+      where,
+      orderBy: { createdAt: 'desc' }
+    });
     res.json(offers);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -940,10 +1243,89 @@ app.get('/api/offers', async (req, res) => {
 
 app.post('/api/offers', async (req, res) => {
   try {
-    const newOffer = await prisma.offer.create({ data: req.body });
-    res.status(201).json(newOffer);
+    const { title, discount, validTill, code, platform, category, merchantName, minOrder, isFlash, status } = req.body;
+    if (!title || !discount || !code || !platform) {
+      return res.status(400).json({ success: false, error: 'Title, discount, code, and platform are required' });
+    }
+
+    const newOffer = await prisma.offer.create({
+      data: {
+        title,
+        discount,
+        validTill: validTill || '30 Sep 2026',
+        code: code.trim().toUpperCase(),
+        platform: platform.toLowerCase(),
+        category: category || null,
+        merchantName: merchantName || null,
+        minOrder: minOrder ? String(minOrder) : '0',
+        isFlash: Boolean(isFlash),
+        status: status || 'Active'
+      }
+    });
+    res.status(201).json({ success: true, message: 'Offer created successfully', offer: newOffer });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put('/api/offers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, discount, validTill, code, platform, category, merchantName, minOrder, isFlash, status } = req.body;
+
+    const existing = await prisma.offer.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Offer not found' });
+    }
+
+    const updatedOffer = await prisma.offer.update({
+      where: { id },
+      data: {
+        title: title !== undefined ? title : existing.title,
+        discount: discount !== undefined ? discount : existing.discount,
+        validTill: validTill !== undefined ? validTill : existing.validTill,
+        code: code !== undefined ? code.trim().toUpperCase() : existing.code,
+        platform: platform !== undefined ? platform.toLowerCase() : existing.platform,
+        category: category !== undefined ? category : existing.category,
+        merchantName: merchantName !== undefined ? merchantName : existing.merchantName,
+        minOrder: minOrder !== undefined ? String(minOrder) : existing.minOrder,
+        isFlash: isFlash !== undefined ? Boolean(isFlash) : existing.isFlash,
+        status: status !== undefined ? status : existing.status
+      }
+    });
+    res.json({ success: true, message: 'Offer updated successfully', offer: updatedOffer });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.patch('/api/offers/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ success: false, error: 'Status is required' });
+    }
+
+    const updatedOffer = await prisma.offer.update({
+      where: { id },
+      data: { status }
+    });
+
+    res.json({ success: true, message: `Offer status updated to ${status}`, offer: updatedOffer });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/offers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.offer.delete({ where: { id } });
+    res.json({ success: true, message: 'Offer deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -1042,6 +1424,24 @@ app.get('/api/reviews', async (req, res) => {
     res.json(reviews);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/reviews', authenticateToken, async (req, res) => {
+  try {
+    const { category, item, rating, comment, dealId, orderId } = req.body;
+    const review = await prisma.review.create({
+      data: {
+        userId: req.user.userId,
+        dealId: dealId || orderId || `order-${Date.now()}`,
+        category: category || 'food',
+        rating: Number(rating) || 5,
+        comment: comment || ''
+      }
+    });
+    res.json({ success: true, review });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -1797,21 +2197,25 @@ app.post('/api/delivery-partner/orders/:id/status', async (req, res) => {
 
     const isFood = !!foodOrder;
     const now = new Date();
-    const updateData = { status };
 
-    if (status === 'PICKED_UP') updateData.pickedUpAt = now;
-    if (status === 'ON_THE_WAY' || status === 'SHIPPED') updateData.onTheWayAt = now;
-    if (status === 'DELIVERED') updateData.deliveredAt = now;
+    const foodUpdateData = { status };
+    if (status === 'PICKED_UP') foodUpdateData.pickedUpAt = now;
+    if (status === 'ON_THE_WAY' || status === 'SHIPPED') foodUpdateData.onTheWayAt = now;
+    if (status === 'DELIVERED') foodUpdateData.deliveredAt = now;
+
+    const skincareUpdateData = { status };
+    if (status === 'ON_THE_WAY' || status === 'SHIPPED' || status === 'PICKED_UP') skincareUpdateData.shippedAt = now;
+    if (status === 'DELIVERED') skincareUpdateData.deliveredAt = now;
 
     const updatedOrder = isFood
       ? await prisma.foodOrder.update({
         where: { id },
-        data: updateData,
+        data: foodUpdateData,
         include: { user: true, items: true, deliveryPartner: true }
       })
       : await prisma.skincareOrder.update({
         where: { id },
-        data: updateData,
+        data: skincareUpdateData,
         include: { user: true, items: true, deliveryPartner: true }
       });
 
@@ -1990,6 +2394,232 @@ app.post('/api/orders/skincare', authenticateToken, async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Error creating skincare order: ' + err.message });
+  }
+});
+
+// ==========================================
+// DELIVERY MANAGEMENT & ASSIGNMENT ENDPOINTS
+// ==========================================
+
+// GET Delivery Partners List
+app.get('/api/delivery/partners', async (req, res) => {
+  try {
+    const { status, availableOnly } = req.query;
+    const where = {};
+    if (status) where.status = status;
+    if (availableOnly === 'true') {
+      where.status = 'AVAILABLE';
+      where.isSuspended = false;
+      where.isVerified = true;
+    }
+
+    const partners = await prisma.deliveryPartner.findMany({
+      where,
+      include: {
+        assignments: {
+          where: { status: 'ASSIGNED' }
+        }
+      },
+      orderBy: { rating: 'desc' }
+    });
+
+    res.json({ success: true, count: partners.length, partners });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET Delivery Assignments Log
+app.get('/api/delivery/assignments', async (req, res) => {
+  try {
+    const assignments = await prisma.deliveryAssignment.findMany({
+      include: {
+        deliveryPartner: true,
+        foodOrder: true,
+        skincareOrder: true,
+        assignedByAdmin: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, count: assignments.length, assignments });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/delivery/assign (Transactional Delivery Partner Assignment)
+app.post('/api/delivery/assign', async (req, res) => {
+  try {
+    const { orderId, orderType, deliveryPartnerId, adminId } = req.body;
+
+    if (!orderId || !deliveryPartnerId) {
+      return res.status(400).json({ success: false, error: 'Both orderId and deliveryPartnerId are required' });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Validate order exists (check FoodOrder then SkincareOrder)
+      let isFoodOrder = orderType === 'food';
+      let targetFoodOrder = null;
+      let targetSkincareOrder = null;
+
+      if (orderType === 'food' || !orderType) {
+        targetFoodOrder = await tx.foodOrder.findFirst({
+          where: { OR: [{ id: orderId }, { orderNumber: orderId }] }
+        });
+      }
+
+      if (!targetFoodOrder && (orderType === 'skincare' || !orderType)) {
+        targetSkincareOrder = await tx.skincareOrder.findFirst({
+          where: { OR: [{ id: orderId }, { orderNumber: orderId }] }
+        });
+        if (targetSkincareOrder) isFoodOrder = false;
+      } else if (targetFoodOrder) {
+        isFoodOrder = true;
+      }
+
+      const order = targetFoodOrder || targetSkincareOrder;
+      if (!order) {
+        throw new Error(`ORDER_NOT_FOUND: Order with ID or number "${orderId}" does not exist.`);
+      }
+
+      // 2. Validate rider exists
+      const rider = await tx.deliveryPartner.findUnique({
+        where: { id: deliveryPartnerId }
+      });
+      if (!rider) {
+        throw new Error(`RIDER_NOT_FOUND: Delivery partner with ID "${deliveryPartnerId}" does not exist.`);
+      }
+
+      // 3. Validate rider is eligible/available
+      if (rider.isSuspended) {
+        throw new Error(`RIDER_INELIGIBLE: Rider "${rider.name}" is currently suspended and cannot be assigned.`);
+      }
+      if (!rider.isVerified) {
+        throw new Error(`RIDER_INELIGIBLE: Rider "${rider.name}" is unverified.`);
+      }
+      if (rider.status === 'OFFLINE' || rider.status === 'SUSPENDED') {
+        throw new Error(`RIDER_UNAVAILABLE: Rider "${rider.name}" is currently ${rider.status.toLowerCase()}.`);
+      }
+
+      const assignedAtDate = new Date();
+
+      // 4. Create/update DeliveryAssignment
+      // Mark previous active assignments for this order as REASSIGNED
+      if (isFoodOrder) {
+        await tx.deliveryAssignment.updateMany({
+          where: { foodOrderId: order.id, status: 'ASSIGNED' },
+          data: { status: 'REASSIGNED', unassignedAt: assignedAtDate }
+        });
+      } else {
+        await tx.deliveryAssignment.updateMany({
+          where: { skincareOrderId: order.id, status: 'ASSIGNED' },
+          data: { status: 'REASSIGNED', unassignedAt: assignedAtDate }
+        });
+      }
+
+      // Find admin user or default to first admin
+      let adminUser = null;
+      if (adminId) {
+        adminUser = await tx.user.findUnique({ where: { id: adminId } });
+      }
+      if (!adminUser) {
+        adminUser = await tx.user.findFirst({ where: { role: { name: 'ADMIN' } } });
+      }
+
+      const assignment = await tx.deliveryAssignment.create({
+        data: {
+          deliveryPartnerId: rider.id,
+          foodOrderId: isFoodOrder ? order.id : null,
+          skincareOrderId: !isFoodOrder ? order.id : null,
+          assignedByAdminId: adminUser ? adminUser.id : null,
+          status: 'ASSIGNED',
+          assignedAt: assignedAtDate
+        }
+      });
+
+      // 5. Link rider to order & 6. Store assignedAt & 8. Update order status
+      let updatedOrder = null;
+      const nextStatus = (order.status === 'PENDING' || order.status === 'CONFIRMED') ? 'READY_FOR_PICKUP' : order.status;
+
+      if (isFoodOrder) {
+        updatedOrder = await tx.foodOrder.update({
+          where: { id: order.id },
+          data: {
+            deliveryPartnerId: rider.id,
+            assignedAt: assignedAtDate,
+            status: nextStatus
+          },
+          include: { deliveryPartner: true }
+        });
+      } else {
+        updatedOrder = await tx.skincareOrder.update({
+          where: { id: order.id },
+          data: {
+            deliveryPartnerId: rider.id,
+            assignedAt: assignedAtDate,
+            status: nextStatus
+          },
+          include: { deliveryPartner: true }
+        });
+      }
+
+      // 7. Update rider availability/status if appropriate
+      const updatedRider = await tx.deliveryPartner.update({
+        where: { id: rider.id },
+        data: {
+          status: 'BUSY'
+        }
+      });
+
+      // 9. Create user notification
+      const notification = await tx.notification.create({
+        data: {
+          userId: order.userId,
+          orderId: order.id,
+          title: 'Delivery Rider Assigned 🛵',
+          message: `Delivery rider ${rider.name} (${rider.phone}) has been assigned to your order #${order.orderNumber || order.id}.`,
+          type: 'delivery',
+          isRead: false
+        }
+      });
+
+      // 10. Create appropriate audit log
+      let auditLog = null;
+      if (adminUser) {
+        auditLog = await tx.adminAuditLog.create({
+          data: {
+            adminId: adminUser.id,
+            action: `Assigned Rider ${rider.name} to Order #${order.orderNumber || order.id}`,
+            target: 'DeliveryAssignment',
+            details: `Rider ${rider.name} (${rider.phone}) assigned to ${isFoodOrder ? 'Food' : 'Skincare'} order ${order.orderNumber || order.id}.`,
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            color: '#ff2b70'
+          }
+        });
+      }
+
+      return {
+        assignment,
+        order: updatedOrder,
+        rider: updatedRider,
+        notification,
+        auditLog
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Rider ${result.rider.name} successfully assigned to order #${result.order.orderNumber || result.order.id}!`,
+      data: result
+    });
+  } catch (error) {
+    console.error('❌ Error in /api/delivery/assign:', error);
+    const msg = error.message.replace(/^(ORDER_NOT_FOUND|RIDER_NOT_FOUND|RIDER_INELIGIBLE|RIDER_UNAVAILABLE):\s*/, '');
+    const isNotFound = error.message.includes('ORDER_NOT_FOUND') || error.message.includes('RIDER_NOT_FOUND');
+    return res.status(isNotFound ? 404 : 400).json({
+      success: false,
+      error: msg
+    });
   }
 });
 

@@ -345,6 +345,81 @@ export default function App() {
 
     if (cartItems.length === 0) return;
 
+    const paymentMethod = orderInfo?.paymentMethod || 'Cash on Delivery';
+
+    // Detect cart type - ride, skincare, or food
+    const skincareApps = ['choice legacy', 'kirei', 'makeup chari', 'choice_legacy', 'makeup_chari'];
+    const hasRideItems = cartItems.some(item => item.type === 'ride');
+    const hasSkincareItems = cartItems.some(item =>
+      skincareApps.includes((item.selectedApp || '').toLowerCase()) ||
+      item.category === 'skincare' ||
+      item.storeTag === 'skincare'
+    );
+
+    if (hasRideItems) {
+      // Place ride trip(s) via the ride API
+      let lastTrip = null;
+      for (const item of cartItems.filter(i => i.type === 'ride')) {
+        const ridePayload = {
+          platform: (item.selectedApp || 'uber').toLowerCase().replace(' bd', '').replace(' ', ''),
+          pickup: item.pickup || 'Pickup Location',
+          destination: item.dropoff || item.destination || 'Destination',
+          carType: item.carType || item.title || 'Car / Sedan (AC)',
+          baseFare: item.price || item.baseFare || 200,
+          discount: item.discount || 0,
+          finalFare: item.price || item.baseFare || 200,
+          promoCode: item.promoCode || null,
+          paymentMethod,
+          distanceKm: item.distanceKm || null,
+          durationMins: item.durationMins || null
+        };
+        const res = await OfferMatrixAPI.createRide(ridePayload);
+        if (res && res.success && res.trip) {
+          lastTrip = res.trip;
+        }
+      }
+      setCartItems([]);
+      if (lastTrip) {
+        triggerToast(`🎉 Ride trip ${lastTrip.tripNumber} booked successfully via ${paymentMethod}!`);
+      } else {
+        triggerToast(`🎉 Ride booked successfully via ${paymentMethod}!`);
+      }
+      return;
+    }
+
+    if (hasSkincareItems) {
+      // Place skincare order via skincare API
+      const storePlatform = (cartItems[0]?.selectedApp || 'choice_legacy').toLowerCase().replace(/ /g, '_');
+      const payload = {
+        items: cartItems.map(item => ({
+          productId: item.id || null,
+          name: item.brand || item.title || item.name,
+          brand: item.brand || item.selectedApp || 'Choice Legacy',
+          quantity: item.qty || 1,
+          unitPrice: item.appPrice || item.currPrice || item.price || item.bestPrice,
+          image: item.img || item.image
+        })),
+        storePlatform,
+        paymentMethod,
+        couponCode: orderInfo?.couponCode || null,
+        deliveryAddress: 'Dhanmondi, Dhaka'
+      };
+
+      const response = await OfferMatrixAPI.createSkincareOrder(payload);
+      if (response && response.success && response.order) {
+        setCartItems([]);
+        const createdOrder = { ...response.order, category: 'skincare' };
+        setUserOrders(prev => [createdOrder, ...prev]);
+        setSelectedOrder(createdOrder);
+        setActiveView('dashboard');
+        triggerToast(`🎉 Skincare order ${response.order.orderNumber} placed via ${paymentMethod}!`);
+      } else {
+        triggerToast(`Error placing skincare order: ${response?.error || 'Failed to complete order'}`);
+      }
+      return;
+    }
+
+    // Default: Food Order
     const payload = {
       items: cartItems.map(item => ({
         foodDealId: item.id || item.foodDealId,
@@ -354,7 +429,7 @@ export default function App() {
         image: item.img || item.image,
         selectedApp: item.selectedApp || item.storeTag || 'FoodPanda'
       })),
-      paymentMethod: orderInfo?.paymentMethod || 'Cash on Delivery'
+      paymentMethod
     };
 
     const response = await OfferMatrixAPI.createOrder(payload);
@@ -363,11 +438,12 @@ export default function App() {
       setUserOrders(prev => [response.order, ...prev]);
       setSelectedOrder(response.order);
       setActiveView('dashboard');
-      triggerToast(`🎉 Order ${response.order.orderNumber} placed successfully!`);
+      triggerToast(`🎉 Order ${response.order.orderNumber} placed successfully via ${paymentMethod}!`);
     } else {
       triggerToast(`Error placing order: ${response?.error || 'Failed to complete order'}`);
     }
   };
+
 
   const allDbDeals = [
     ...dbFoodDeals.map(d => ({

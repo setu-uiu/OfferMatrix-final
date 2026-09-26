@@ -449,18 +449,189 @@ async function main() {
     ]
   });
 
-  // 18. Admin Audit Logs
-  console.log('18. Seeding Admin Audit Logs...');
-  await prisma.adminAuditLog.deleteMany({});
-  await prisma.adminAuditLog.createMany({
-    data: [
-      { id: 'log-1', adminId: 'usr-admin', action: 'Approved Merchant Kirei Beauty', target: 'Merchants', details: 'Verified trade license and active catalog.', date: 'Today, 04:15 PM', color: '#10b981' },
-      { id: 'log-2', adminId: 'usr-admin', action: 'Suspended User Rafi Ahmed', target: 'Users', details: 'Multiple abusive support messages logged.', date: '05 Sep 2026, 03:00 PM', color: '#ef4444' },
-      { id: 'log-3', adminId: 'usr-admin', action: 'Created Coupon SAVE10', target: 'Coupons', details: '10% sitewide promotional voucher added.', date: '01 Sep 2026, 10:00 AM', color: '#3b82f6' }
-    ]
-  });
+  // 19. Delivery Partners
+  console.log('19. Seeding Delivery Partners...');
+  const deliveryPartners = [
+    {
+      id: 'dp-1',
+      name: 'Rahim Ahmed',
+      phone: '+880 1712 345678',
+      email: 'rahim@delivery.com',
+      partnerCode: 'DP-1024',
+      vehicle: 'Honda Dream 110 (Motorcycle)',
+      vehicleType: 'Motorcycle',
+      licensePlate: 'DHA-1234',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+      totalDeliveries: 842,
+      rating: 4.8,
+      status: 'AVAILABLE',
+      isVerified: true,
+      isSuspended: false
+    },
+    {
+      id: 'dp-2',
+      name: 'Sakib Hasan',
+      phone: '+880 1819 876543',
+      email: 'sakib@delivery.com',
+      partnerCode: 'DP-1088',
+      vehicle: 'Yamaha FZ-S (Motorcycle)',
+      vehicleType: 'Motorcycle',
+      licensePlate: 'DHA-5678',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80',
+      totalDeliveries: 620,
+      rating: 4.7,
+      status: 'BUSY',
+      isVerified: true,
+      isSuspended: false
+    },
+    {
+      id: 'dp-3',
+      name: 'Mahmudul Islam',
+      phone: '+880 1911 223344',
+      email: 'mahmudul@delivery.com',
+      partnerCode: 'DP-1102',
+      vehicle: 'Runner Turbo 125',
+      vehicleType: 'Motorcycle',
+      licensePlate: 'DHA-9012',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&q=80',
+      totalDeliveries: 598,
+      rating: 4.6,
+      status: 'AVAILABLE',
+      isVerified: true,
+      isSuspended: false
+    },
+    {
+      id: 'dp-4',
+      name: 'Tarek Rahman',
+      phone: '+880 1677 334455',
+      email: 'tarek@delivery.com',
+      partnerCode: 'DP-1145',
+      vehicle: 'TVS Metro Plus',
+      vehicleType: 'Motorcycle',
+      licensePlate: 'DHA-3456',
+      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&q=80',
+      totalDeliveries: 410,
+      rating: 4.5,
+      status: 'AVAILABLE',
+      isVerified: true,
+      isSuspended: false
+    },
+    {
+      id: 'dp-5',
+      name: 'Hasan Ali',
+      phone: '+880 1552 667788',
+      email: 'hasan@delivery.com',
+      partnerCode: 'DP-1201',
+      vehicle: 'Discover 125',
+      vehicleType: 'Motorcycle',
+      licensePlate: 'DHA-7890',
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80',
+      totalDeliveries: 280,
+      rating: 4.4,
+      status: 'OFFLINE',
+      isVerified: true,
+      isSuspended: false
+    },
+    {
+      id: 'dp-6',
+      name: 'Imran Khan',
+      phone: '+880 1300 998877',
+      email: 'imran@delivery.com',
+      partnerCode: 'DP-1290',
+      vehicle: 'Hero Splendor',
+      vehicleType: 'Motorcycle',
+      licensePlate: 'DHA-2468',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+      totalDeliveries: 150,
+      rating: 4.3,
+      status: 'SUSPENDED',
+      isVerified: false,
+      isSuspended: true
+    }
+  ];
 
-  console.log('✨ Full 18-Table Database Seeding Completed Successfully!');
+  for (const dp of deliveryPartners) {
+    await prisma.deliveryPartner.upsert({
+      where: { id: dp.id },
+      update: dp,
+      create: dp
+    });
+  }
+
+  // 20. Food Orders
+  console.log('20. Seeding Food Orders...');
+  const foodOrders = [
+    {
+      id: 'fo-1',
+      orderNumber: 'OM-20250922-0012',
+      userId: 'usr-nusrat',
+      merchantName: 'KFC - Gulshan 1',
+      category: 'food',
+      status: 'CONFIRMED',
+      subtotal: 550.00,
+      deliveryFee: 50.00,
+      discount: 80.00,
+      totalAmount: 520.00,
+      paymentMethod: 'bKash',
+      deliveryAddress: 'House 12, Road 5, Banani, Dhaka 1213',
+      deliveryArea: 'Banani',
+      deliveryPhone: '+880 1712 345678'
+    },
+    {
+      id: 'fo-2',
+      orderNumber: 'OM-20250922-0011',
+      userId: 'usr-tanvir',
+      merchantName: 'Pathao Food Kitchen',
+      category: 'food',
+      status: 'PENDING',
+      subtotal: 650.00,
+      deliveryFee: 40.00,
+      discount: 40.00,
+      totalAmount: 650.00,
+      paymentMethod: 'Nagad',
+      deliveryAddress: 'Plot 44, Block C, Gulshan 1, Dhaka',
+      deliveryArea: 'Gulshan 1',
+      deliveryPhone: '+880 1689 123456'
+    }
+  ];
+
+  for (const fo of foodOrders) {
+    await prisma.foodOrder.upsert({
+      where: { id: fo.id },
+      update: fo,
+      create: fo
+    });
+  }
+
+  // 21. Skincare Orders
+  console.log('21. Seeding Skincare Orders...');
+  const skincareOrders = [
+    {
+      id: 'so-1',
+      orderNumber: 'OM-20250922-0010',
+      userId: 'usr-samiha',
+      storePlatform: 'choice_legacy',
+      status: 'PENDING',
+      subtotal: 1290.00,
+      deliveryFee: 60.00,
+      discount: 60.00,
+      totalAmount: 1290.00,
+      paymentMethod: 'Card',
+      deliveryAddress: 'House 88, Road 11, Uttara, Dhaka',
+      deliveryArea: 'Uttara',
+      deliveryPhone: '+880 1700 987654'
+    }
+  ];
+
+  for (const so of skincareOrders) {
+    await prisma.skincareOrder.upsert({
+      where: { id: so.id },
+      update: so,
+      create: so
+    });
+  }
+
+  console.log('✨ Full Database Seeding with Delivery Models Completed Successfully!');
 }
 
 main()

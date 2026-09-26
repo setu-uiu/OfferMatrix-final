@@ -53,6 +53,7 @@ export default function BasketModal({
   if (selectedGlobalPayment === 'bKash') paymentDiscountPct = 0.05; // 5%
   else if (selectedGlobalPayment === 'Nagad') paymentDiscountPct = 0.07; // 7%
   else if (selectedGlobalPayment === 'Card') paymentDiscountPct = 0.10; // 10%
+  else if (selectedGlobalPayment === 'Rocket') paymentDiscountPct = 0.03; // 3%
   else paymentDiscountPct = 0; // Cash on delivery
 
   const paymentDiscountAmount = Math.round(validBaseTotal * paymentDiscountPct);
@@ -61,17 +62,18 @@ export default function BasketModal({
 
   const handleCheckout = () => {
     if (cartItems.length === 0) return;
+    const normalizedPayment = selectedGlobalPayment === 'COD' ? 'Cash on Delivery' : selectedGlobalPayment;
     if (onPlaceOrder) {
       onPlaceOrder({
         cartItems,
         grandTotal,
         totalSavings,
-        paymentMethod: selectedGlobalPayment,
+        paymentMethod: normalizedPayment,
         uniqueApps
       });
     }
     onClearCart();
-    onToast(`🎉 Order Placed Successfully! Total: ৳${grandTotal.toLocaleString()} via ${selectedGlobalPayment}`);
+    onToast(`🎉 Order Placed Successfully! Total: ৳${grandTotal.toLocaleString()} via ${normalizedPayment}`);
     onClose();
   };
 
@@ -278,15 +280,16 @@ export default function BasketModal({
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <CreditCard size={18} color="#ff2b70" />
                 <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', margin: 0 }}>
-                  Select Preferred Payment Method for Extra Discount:
+                  Select Payment Method:
                 </h4>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' }}>
                 {[
                   { id: 'bKash', name: 'bKash', discount: '5% OFF', color: '#e2136e', bg: '#fdf2f8' },
                   { id: 'Nagad', name: 'Nagad', discount: '7% OFF', color: '#f97316', bg: '#fff7ed' },
                   { id: 'Card', name: 'Visa / Card', discount: '10% OFF', color: '#2563eb', bg: '#eff6ff' },
+                  { id: 'Rocket', name: 'Rocket', discount: '3% OFF', color: '#7c3aed', bg: '#f5f3ff' },
                   { id: 'COD', name: 'Cash on Delivery', discount: 'No Extra Off', color: '#4b5563', bg: '#f3f4f6' },
                 ].map((pm) => (
                   <button

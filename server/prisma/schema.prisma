@@ -21,11 +21,11 @@ model User {
   email                    String          @unique
   name                     String
   password                 String?
-  phone                    String?
+  phone                    String?         @unique
   avatar                   String?
   status                   String          @default("Active") // "Active", "Reported", "Suspended"
   subscriptionPlan         String          @default("free") // "free", "pro", "vip"
-  isEmailVerified          Boolean         @default(true)
+  isEmailVerified          Boolean         @default(false)
   verificationToken        String?
   verificationTokenExpires DateTime?
   resetPasswordToken       String?

@@ -5,6 +5,7 @@ import {
   Settings, HelpCircle, LogOut, ChevronDown, ShoppingBag,
   Tag, Zap, ArrowLeft, RefreshCw, Star, Clock, MapPin
 } from 'lucide-react';
+import { OfferMatrixAPI } from '../services/api';
 
 export default function UserDashboard({
   currentUser,
@@ -49,6 +50,16 @@ export default function UserDashboard({
       else if (initialTab === 'dashboard') setActiveCategoryMode('dashboard');
     }
   }, [initialTab]);
+
+  useEffect(() => {
+    if (onRefreshOrders) {
+      onRefreshOrders();
+      const interval = setInterval(() => {
+        onRefreshOrders();
+      }, 8000);
+      return () => clearInterval(interval);
+    }
+  }, [onRefreshOrders]);
   const [copiedCoupon, setCopiedCoupon] = useState('');
   const [selectedQuickAction, setSelectedQuickAction] = useState('food');
   const [orderCategoryFilter, setOrderCategoryFilter] = useState('all');
@@ -386,7 +397,7 @@ export default function UserDashboard({
     }));
   };
 
-  const handleAddNewReview = (e) => {
+  const handleAddNewReview = async (e) => {
     e.preventDefault();
     if (!newReviewForm.item.trim() || !newReviewForm.comment.trim()) {
       onToast('Please fill out the item name and review comment.');
@@ -416,10 +427,21 @@ export default function UserDashboard({
       isHelpful: true
     };
 
+    try {
+      await OfferMatrixAPI.createReview({
+        category: newReviewForm.category,
+        item: newReviewForm.item,
+        rating: newReviewForm.rating,
+        comment: newReviewForm.comment
+      });
+    } catch (err) {
+      console.warn('Backend review save failed, retained in local state', err);
+    }
+
     setUserReviewsList([newEntry, ...userReviewsList]);
     setIsAddingReview(false);
     setNewReviewForm({
-      user: 'Sadman Rahman',
+      user: currentUser?.name || 'Sadman Rahman',
       category: 'food',
       item: '',
       rating: 5,
@@ -1711,20 +1733,49 @@ export default function UserDashboard({
   const dynamicProviders = getDynamicRideProviders();
   const cheapestOption = [...dynamicProviders].sort((a, b) => a.finalFare - b.finalFare)[0];
 
-  const handleConfirmRideBooking = (rideObj) => {
+  const handleConfirmRideBooking = async (rideObj) => {
+    const normalizedPlatform = (rideObj.brand || 'uber').toLowerCase().replace(/ /g, '').replace('bd', '');
+    const ridePayload = {
+      platform: normalizedPlatform,
+      pickup: pickupLocation || 'Pickup Location',
+      destination: dropLocation || 'Destination',
+      carType: rideObj.carType || 'Car / Sedan (AC)',
+      baseFare: rideObj.basePrice || rideObj.finalFare || 200,
+      discount: rideObj.savings || 0,
+      finalFare: rideObj.finalFare || rideObj.basePrice || 200,
+      promoCode: rideObj.promoCode || null,
+      paymentMethod: selectedPaymentMethod || 'Cash',
+      distanceKm: routeInfo?.dist ? Number(routeInfo.dist) : null,
+      durationMins: routeInfo?.time ? Number(String(routeInfo.time).replace(/[^0-9]/g, '')) : null
+    };
+
+    const token = localStorage.getItem('offermatrix_token');
+    let tripNumber = `RIDE-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    if (token) {
+      try {
+        const res = await OfferMatrixAPI.createRide(ridePayload);
+        if (res && res.success && res.trip) {
+          tripNumber = res.trip.tripNumber;
+        }
+      } catch (e) {
+        console.warn('Ride API error:', e);
+      }
+    }
+
     const newRideOrder = {
       id: `act-${Date.now()}`,
       category: 'ride',
       title: `${rideObj.brand} Ride (${pickupLocation.split(',')[0]} to ${dropLocation.split(',')[0]})`,
       subtitle: `${rideObj.brand} (${rideObj.carType})`,
-      code: `Order #RIDE-${Math.floor(100000 + Math.random() * 900000)} • Just now`,
+      code: `${tripNumber} • Just now`,
       status: 'In Transit',
       estTotal: `Est. Total: ৳${rideObj.finalFare}`,
       img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=120&q=80',
       avatarText: rideObj.logoText,
       bgClass: 'bg-kb',
       summary: {
-        orderId: `Order #RIDE-${Math.floor(100000 + Math.random() * 900000)}`,
+        orderId: tripNumber,
         date: `Placed Today • ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
         type: 'ride',
         driverName: 'Rider: Rahim',
@@ -1737,13 +1788,14 @@ export default function UserDashboard({
         subtotal: `৳${rideObj.basePrice}`,
         deliveryFee: '৳0',
         discount: `-৳${rideObj.savings}`,
-        total: `৳${rideObj.finalFare}`
+        total: `৳${rideObj.finalFare}`,
+        paymentMethod: selectedPaymentMethod || 'Cash'
       }
     };
 
     ALL_ACTIVE_ORDERS.unshift(newRideOrder);
     setBookingRideModal(null);
-    onToast(`🎉 Ride booked with ${rideObj.brand}! Driver Rahim is on the way.`);
+    onToast(`🎉 Ride booked with ${rideObj.brand} via ${selectedPaymentMethod || 'Cash'}! Driver Rahim is on the way.`);
     setActiveTab('orders');
     setSelectedOrder(newRideOrder);
   };
@@ -1751,11 +1803,11 @@ export default function UserDashboard({
   const userName = currentUser?.name || 'Meherunnesasetu7';
 
   const formattedUserOrders = (userOrders || []).map(order => {
-    const rawSt = order.status || 'PENDING';
+    const rawSt = (order.status || 'PENDING').toUpperCase();
     const firstItem = order.items?.[0];
     const itemsTitle = order.items && order.items.length > 0
       ? order.items.map(i => `${i.name}${i.quantity > 1 ? ` x${i.quantity}` : ''}`).join(' + ')
-      : 'Food Order';
+      : (order.title || 'Food Order');
 
     const formattedDateStr = order.createdAt
       ? new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -1765,48 +1817,407 @@ export default function UserDashboard({
       ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       : '';
 
+    const deliveryTimestamp = order.deliveredAt || order.completedAt;
+    const deliveredTimeStr = deliveryTimestamp
+      ? new Date(deliveryTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : (order.updatedAt && (rawSt === 'DELIVERED' || rawSt === 'COMPLETED') ? new Date(order.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : formattedTimeStr);
+
+    const deliveredDateStr = deliveryTimestamp
+      ? new Date(deliveryTimestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+      : formattedDateStr;
+
+    const isSkincare = order.category === 'skincare' || (order.orderNumber && order.orderNumber.startsWith('SKIN-')) || !!order.storePlatform;
+    const categoryKey = isSkincare ? 'skincare' : (order.category || 'food');
+
+    const storeMap = {
+      choice_legacy: 'Choice Legacy Store',
+      kirei: 'Kirei BD Store',
+      makeup_chari: 'Makeup Chari Store'
+    };
+
+    const merchantName = order.merchantName || (order.storePlatform ? (storeMap[order.storePlatform] || order.storePlatform.replace(/_/g, ' ').toUpperCase()) : (isSkincare ? 'Choice Legacy Store' : 'OfferMatrix Food'));
+
+    const isRiderAssigned = !!(order.deliveryPartner?.name || order.deliveryPartnerId || order.deliveryPartnerName || order.driverName);
+    const riderObj = order.deliveryPartner || {};
+    const riderName = riderObj.name || order.deliveryPartnerName || order.driverName || null;
+    const riderPhone = riderObj.phone || order.deliveryPartnerPhone || order.driverPhone || null;
+    const riderVehicle = riderObj.vehicle || riderObj.vehicleModel || (riderObj.vehicleType ? `${riderObj.vehicleType}${riderObj.licensePlate ? ` (${riderObj.licensePlate})` : ''}` : null) || order.deliveryPartnerVehicle || order.vehicleModel || null;
+    const riderImg = riderObj.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80';
+    const partnerCode = riderObj.partnerCode || null;
+
+    let statusText = rawSt === 'PENDING' ? (isRiderAssigned ? 'Rider Assigned' : 'Waiting for rider')
+      : rawSt === 'CONFIRMED' ? (isRiderAssigned ? 'Rider Assigned' : 'Waiting for rider')
+      : rawSt === 'PROCESSING' ? (isRiderAssigned ? 'Rider Assigned' : 'Waiting for rider')
+      : rawSt === 'PREPARING' ? (isRiderAssigned ? 'Rider Assigned' : 'Waiting for rider')
+      : (rawSt === 'ON_THE_WAY' || rawSt === 'SHIPPED') ? 'On the way'
+      : (rawSt === 'DELIVERED' || rawSt === 'COMPLETED') ? 'Delivered'
+      : rawSt === 'CANCELLED' ? 'Cancelled'
+      : order.status || rawSt;
+
+    if (isRiderAssigned && rawSt !== 'DELIVERED' && rawSt !== 'COMPLETED' && rawSt !== 'CANCELLED') {
+      statusText = 'Rider Assigned';
+    }
+
+    const isCompleted = rawSt === 'DELIVERED' || rawSt === 'COMPLETED';
+
     return {
       id: order.id,
       orderNumber: order.orderNumber,
-      category: order.category || 'food',
+      category: categoryKey,
       title: itemsTitle,
-      subtitle: order.merchantName || 'OfferMatrix Food',
+      subtitle: merchantName,
       code: `Order #${order.orderNumber} • ${formattedTimeStr}`,
-      status: rawSt === 'PENDING' ? 'Pending' : rawSt === 'CONFIRMED' ? 'Confirmed' : rawSt === 'PREPARING' ? 'Preparing' : rawSt === 'ON_THE_WAY' ? 'In Transit' : rawSt === 'DELIVERED' ? 'Delivered' : rawSt,
+      status: statusText,
       rawStatus: rawSt,
-      estTotal: `Total: ৳${Number(order.totalAmount).toLocaleString()}`,
-      price: `৳${Number(order.totalAmount).toLocaleString()}`,
-      img: firstItem?.image || 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=120&q=80',
-      avatarText: order.merchantName ? order.merchantName.substring(0, 2).toUpperCase() : 'OM',
+      deliveryPartner: riderObj,
+      isRiderAssigned,
+      estTotal: `Total: ৳${Number(order.totalAmount || 0).toLocaleString()}`,
+      price: `৳${Number(order.totalAmount || 0).toLocaleString()}`,
+      img: firstItem?.image || (isSkincare ? 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=120&q=80' : 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=120&q=80'),
+      avatarText: merchantName ? merchantName.substring(0, 2).toUpperCase() : 'CL',
       bgClass: 'bg-kb',
-      date: `${formattedDateStr}${formattedTimeStr ? ` • ${formattedTimeStr}` : ''}`,
+      date: isCompleted
+        ? `${deliveredDateStr}${deliveredTimeStr ? ` • ${deliveredTimeStr}` : ''}`
+        : `${formattedDateStr}${formattedTimeStr ? ` • ${formattedTimeStr}` : ''}`,
       summary: {
         orderId: `Order #${order.orderNumber}`,
-        date: `Placed on ${formattedDateStr}${formattedTimeStr ? ` • ${formattedTimeStr}` : ''}`,
-        type: order.category || 'food',
+        date: isCompleted
+          ? `Delivered on ${deliveredDateStr}${deliveredTimeStr ? ` • ${deliveredTimeStr}` : ''}`
+          : `Placed on ${formattedDateStr}${formattedTimeStr ? ` • ${formattedTimeStr}` : ''}`,
+        deliveryTime: isCompleted ? `${deliveredDateStr} • ${deliveredTimeStr}` : null,
+        type: categoryKey,
         rawStatus: rawSt,
-        driverName: order.deliveryPartner?.name ? `Rider: ${order.deliveryPartner.name}` : null,
-        driverPhone: order.deliveryPartner?.phone || null,
-        riderImg: order.deliveryPartner?.avatar || null,
-        partnerCode: order.deliveryPartner?.partnerCode || null,
-        riderVehicle: order.deliveryPartner?.vehicle || null,
+        driverName: riderName ? (riderName.startsWith('Rider:') || riderName.startsWith('Driver:') || riderName.startsWith('Carrier:') ? riderName : `Rider: ${riderName}`) : null,
+        driverPhone: riderPhone,
+        riderImg,
+        partnerCode,
+        riderVehicle,
         items: (order.items || []).map(i => ({
           name: i.name,
           qty: `x${i.quantity}`,
-          price: `৳${(Number(i.unitPrice) * i.quantity).toLocaleString()}`,
-          img: i.image || 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=80&q=80'
+          price: `৳${(Number(i.unitPrice || 0) * (i.quantity || 1)).toLocaleString()}`,
+          img: i.image || (isSkincare ? 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=80&q=80' : 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=80&q=80')
         })),
-        subtotal: `৳${Number(order.subtotal).toLocaleString()}`,
-        deliveryFee: `৳${Number(order.deliveryFee).toLocaleString()}`,
-        discount: `-৳${Number(order.discount).toLocaleString()}`,
-        total: `৳${Number(order.totalAmount).toLocaleString()}`,
-        paymentMethod: order.paymentMethod || 'Cash on Delivery'
+        subtotal: `৳${Number(order.subtotal || order.totalAmount || 0).toLocaleString()}`,
+        deliveryFee: `৳${Number(order.deliveryFee || 0).toLocaleString()}`,
+        discount: `-৳${Number(order.discount || 0).toLocaleString()}`,
+        total: `৳${Number(order.totalAmount || 0).toLocaleString()}`,
+        paymentMethod: order.paymentMethod || 'bKash'
       }
     };
   });
 
-  const ALL_ACTIVE_ORDERS = formattedUserOrders.filter(o => o.rawStatus !== 'DELIVERED' && o.rawStatus !== 'CANCELLED');
-  const ALL_HISTORY_ORDERS = formattedUserOrders.filter(o => o.rawStatus === 'DELIVERED' || o.rawStatus === 'CANCELLED');
+  const DEMO_ORDER_HISTORY = [
+    // Food Order History Demo Data
+    {
+      id: 'hist-food-1',
+      orderNumber: 'OM-20260922-1092',
+      category: 'food',
+      title: 'Chicken Biryani Combo Meal x2',
+      subtitle: 'Kacchi Bhai • Dhanmondi 27',
+      code: 'Order #OM-20260922-1092 • 01:15 PM',
+      status: 'Delivered',
+      rawStatus: 'DELIVERED',
+      estTotal: 'Total: ৳378',
+      price: '৳378',
+      img: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=120&q=80',
+      avatarText: 'KB',
+      bgClass: 'bg-kb',
+      date: '22 Sep 2026 • 01:15 PM',
+      summary: {
+        orderId: 'Order #OM-20260922-1092',
+        date: 'Placed on 22 Sep 2026 • 01:15 PM',
+        type: 'food',
+        rawStatus: 'DELIVERED',
+        driverName: 'Rider: Rahim Ahmed',
+        driverPhone: '+880 1712 345678',
+        riderImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+        items: [
+          { name: 'Chicken Biryani Combo Meal', qty: 'x2', price: '৳378', img: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=80&q=80' }
+        ],
+        subtotal: '৳378',
+        deliveryFee: '৳30',
+        discount: '-৳30',
+        total: '৳378',
+        paymentMethod: 'bKash'
+      }
+    },
+    {
+      id: 'hist-food-2',
+      orderNumber: 'OM-20260919-4412',
+      category: 'food',
+      title: 'Cheesy Pepperoni Pizza Large',
+      subtitle: 'Pizza Hut • Gulshan 2',
+      code: 'Order #OM-20260919-4412 • 08:30 PM',
+      status: 'Delivered',
+      rawStatus: 'DELIVERED',
+      estTotal: 'Total: ৳599',
+      price: '৳599',
+      img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=120&q=80',
+      avatarText: 'PH',
+      bgClass: 'bg-kb',
+      date: '19 Sep 2026 • 08:30 PM',
+      summary: {
+        orderId: 'Order #OM-20260919-4412',
+        date: 'Placed on 19 Sep 2026 • 08:30 PM',
+        type: 'food',
+        rawStatus: 'DELIVERED',
+        driverName: 'Rider: Tanvir Hossain',
+        driverPhone: '+880 1819 876543',
+        riderImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+        items: [
+          { name: 'Cheesy Pepperoni Pizza Large', qty: 'x1', price: '৳599', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=80&q=80' }
+        ],
+        subtotal: '৳599',
+        deliveryFee: '৳40',
+        discount: '-৳40',
+        total: '৳599',
+        paymentMethod: 'Cash on Delivery'
+      }
+    },
+    {
+      id: 'hist-food-3',
+      orderNumber: 'OM-20260915-8831',
+      category: 'food',
+      title: 'Beef Double Cheese Burger Meal',
+      subtitle: 'Takeout Burgers • Dhanmondi 2',
+      code: 'Order #OM-20260915-8831 • 07:45 PM',
+      status: 'Delivered',
+      rawStatus: 'DELIVERED',
+      estTotal: 'Total: ৳320',
+      price: '৳320',
+      img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=120&q=80',
+      avatarText: 'TB',
+      bgClass: 'bg-kb',
+      date: '15 Sep 2026 • 07:45 PM',
+      summary: {
+        orderId: 'Order #OM-20260915-8831',
+        date: 'Placed on 15 Sep 2026 • 07:45 PM',
+        type: 'food',
+        rawStatus: 'DELIVERED',
+        driverName: 'Rider: Kamrul Islam',
+        driverPhone: '+880 1911 223344',
+        riderImg: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
+        items: [
+          { name: 'Beef Double Cheese Burger Meal', qty: 'x1', price: '৳320', img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=80&q=80' }
+        ],
+        subtotal: '৳320',
+        deliveryFee: '৳30',
+        discount: '-৳30',
+        total: '৳320',
+        paymentMethod: 'Nagad'
+      }
+    },
+    // Skincare Order History Demo Data
+    {
+      id: 'hist-skin-1',
+      orderNumber: 'SKIN-20260920-5510',
+      category: 'skincare',
+      title: 'CeraVe Hydrating Cleanser 473ml',
+      subtitle: 'Choice Legacy Store • Authentic K-Beauty',
+      code: 'Order #SKIN-20260920-5510 • 03:20 PM',
+      status: 'Delivered',
+      rawStatus: 'DELIVERED',
+      estTotal: 'Total: ৳1,250',
+      price: '৳1,250',
+      img: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=120&q=80',
+      avatarText: 'CL',
+      bgClass: 'bg-kb',
+      date: '20 Sep 2026 • 03:20 PM',
+      summary: {
+        orderId: 'Order #SKIN-20260920-5510',
+        date: 'Placed on 20 Sep 2026 • 03:20 PM',
+        type: 'skincare',
+        rawStatus: 'DELIVERED',
+        driverName: 'Carrier: Pathao Courier',
+        driverPhone: '+880 1715 889900',
+        riderImg: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&q=80',
+        items: [
+          { name: 'CeraVe Hydrating Cleanser 473ml', qty: 'x1', price: '৳1,250', img: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=80&q=80' }
+        ],
+        subtotal: '৳1,250',
+        deliveryFee: '৳50',
+        discount: '-৳50',
+        total: '৳1,250',
+        paymentMethod: 'bKash'
+      }
+    },
+    {
+      id: 'hist-skin-2',
+      orderNumber: 'SKIN-20260917-8821',
+      category: 'skincare',
+      title: 'COSRX Advanced Snail 96 Mucin Essence',
+      subtitle: 'Kirei BD Store • Hydration Barrier',
+      code: 'Order #SKIN-20260917-8821 • 11:10 AM',
+      status: 'Delivered',
+      rawStatus: 'DELIVERED',
+      estTotal: 'Total: ৳1,450',
+      price: '৳1,450',
+      img: 'https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&w=120&q=80',
+      avatarText: 'KR',
+      bgClass: 'bg-kb',
+      date: '17 Sep 2026 • 11:10 AM',
+      summary: {
+        orderId: 'Order #SKIN-20260917-8821',
+        date: 'Placed on 17 Sep 2026 • 11:10 AM',
+        type: 'skincare',
+        rawStatus: 'DELIVERED',
+        driverName: 'Carrier: Steadfast Express',
+        driverPhone: '+880 1612 556677',
+        riderImg: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80',
+        items: [
+          { name: 'COSRX Advanced Snail 96 Mucin Power Essence 100ml', qty: 'x1', price: '৳1,450', img: 'https://images.unsplash.com/photo-1617897903246-719242758050?auto=format&fit=crop&w=80&q=80' }
+        ],
+        subtotal: '৳1,450',
+        deliveryFee: '৳60',
+        discount: '-৳60',
+        total: '৳1,450',
+        paymentMethod: 'Card'
+      }
+    },
+    {
+      id: 'hist-skin-3',
+      orderNumber: 'SKIN-20260912-3319',
+      category: 'skincare',
+      title: 'The Ordinary Niacinamide 10% + Zinc 1%',
+      subtitle: 'Makeup Chari • Blemish Formula',
+      code: 'Order #SKIN-20260912-3319 • 04:45 PM',
+      status: 'Delivered',
+      rawStatus: 'DELIVERED',
+      estTotal: 'Total: ৳950',
+      price: '৳950',
+      img: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=120&q=80',
+      avatarText: 'MC',
+      bgClass: 'bg-kb',
+      date: '12 Sep 2026 • 04:45 PM',
+      summary: {
+        orderId: 'Order #SKIN-20260912-3319',
+        date: 'Placed on 12 Sep 2026 • 04:45 PM',
+        type: 'skincare',
+        rawStatus: 'DELIVERED',
+        driverName: 'Carrier: RedX Logistics',
+        driverPhone: '+880 1812 112233',
+        riderImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+        items: [
+          { name: 'The Ordinary Niacinamide 10% + Zinc 1% 30ml', qty: 'x1', price: '৳950', img: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=80&q=80' }
+        ],
+        subtotal: '৳950',
+        deliveryFee: '৳50',
+        discount: '-৳50',
+        total: '৳950',
+        paymentMethod: 'Nagad'
+      }
+    },
+    // Ride / Trip History Demo Data
+    {
+      id: 'hist-ride-1',
+      orderNumber: 'RIDE-20260921-9901',
+      category: 'ride',
+      title: 'Uber Premier — Dhanmondi to Airport',
+      subtitle: 'Uber BD • Toyota Premio (AC)',
+      code: 'Trip #RIDE-20260921-9901 • 09:15 AM',
+      status: 'Completed',
+      rawStatus: 'DELIVERED',
+      estTotal: 'Fare: ৳450',
+      price: '৳450',
+      img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=120&q=80',
+      avatarText: 'UB',
+      bgClass: 'bg-kb',
+      date: '21 Sep 2026 • 09:15 AM',
+      summary: {
+        orderId: 'Trip #RIDE-20260921-9901',
+        date: 'Completed 21 Sep 2026 • 09:15 AM',
+        type: 'ride',
+        rawStatus: 'DELIVERED',
+        driverName: 'Driver: Tanvir Hossain',
+        driverPhone: '+880 1819 876543',
+        riderImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+        route: { pickup: 'House 42, Road 7/A, Dhanmondi', drop: 'Terminal 2, HSI Airport, Dhaka' },
+        items: [
+          { name: 'Uber Sedan (18.5 km • 34 mins)', qty: '1 Ride', price: '৳450', img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=80&q=80' }
+        ],
+        subtotal: '৳550',
+        deliveryFee: '৳0',
+        discount: '-৳100',
+        total: '৳450',
+        paymentMethod: 'bKash'
+      }
+    },
+    {
+      id: 'hist-ride-2',
+      orderNumber: 'RIDE-20260918-6623',
+      category: 'ride',
+      title: 'Pathao Car — Uttara to Gulshan 2',
+      subtitle: 'Pathao Rides • Honda Grace Hybrid',
+      code: 'Trip #RIDE-20260918-6623 • 06:40 PM',
+      status: 'Completed',
+      rawStatus: 'DELIVERED',
+      estTotal: 'Fare: ৳380',
+      price: '৳380',
+      img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=120&q=80',
+      avatarText: 'PT',
+      bgClass: 'bg-kb',
+      date: '18 Sep 2026 • 06:40 PM',
+      summary: {
+        orderId: 'Trip #RIDE-20260918-6623',
+        date: 'Completed 18 Sep 2026 • 06:40 PM',
+        type: 'ride',
+        rawStatus: 'DELIVERED',
+        driverName: 'Driver: Kamrul Islam',
+        driverPhone: '+880 1911 223344',
+        riderImg: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
+        route: { pickup: 'Sector 11, Uttara', drop: 'Gulshan 2 Circle, Dhaka' },
+        items: [
+          { name: 'Pathao Car AC (14.2 km • 28 mins)', qty: '1 Ride', price: '৳380', img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=80&q=80' }
+        ],
+        subtotal: '৳460',
+        deliveryFee: '৳0',
+        discount: '-৳80',
+        total: '৳380',
+        paymentMethod: 'bKash'
+      }
+    },
+    {
+      id: 'hist-ride-3',
+      orderNumber: 'RIDE-20260914-1102',
+      category: 'ride',
+      title: 'InDriver Bidding — Mirpur 10 to Motijheel',
+      subtitle: 'InDriver BD • Nissan Sunny',
+      code: 'Trip #RIDE-20260914-1102 • 10:15 AM',
+      status: 'Completed',
+      rawStatus: 'DELIVERED',
+      estTotal: 'Fare: ৳290',
+      price: '৳290',
+      img: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=120&q=80',
+      avatarText: 'ID',
+      bgClass: 'bg-kb',
+      date: '14 Sep 2026 • 10:15 AM',
+      summary: {
+        orderId: 'Trip #RIDE-20260914-1102',
+        date: 'Completed 14 Sep 2026 • 10:15 AM',
+        type: 'ride',
+        rawStatus: 'DELIVERED',
+        driverName: 'Driver: Shakil Chowdhury',
+        driverPhone: '+880 1612 556677',
+        riderImg: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80',
+        route: { pickup: 'Mirpur 10 Circle', drop: 'Motijheel Commercial Area' },
+        items: [
+          { name: 'InDriver Mini (12.8 km • 24 mins)', qty: '1 Ride', price: '৳290', img: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=80&q=80' }
+        ],
+        subtotal: '৳350',
+        deliveryFee: '৳0',
+        discount: '-৳60',
+        total: '৳290',
+        paymentMethod: 'Cash on Delivery'
+      }
+    }
+  ];
+
+  const ALL_ACTIVE_ORDERS = formattedUserOrders.filter(o => o.rawStatus !== 'DELIVERED' && o.rawStatus !== 'COMPLETED' && o.rawStatus !== 'CANCELLED');
+  const ALL_HISTORY_ORDERS = [
+    ...formattedUserOrders.filter(o => o.rawStatus === 'DELIVERED' || o.rawStatus === 'COMPLETED' || o.rawStatus === 'CANCELLED'),
+    ...DEMO_ORDER_HISTORY
+  ];
 
   // Filtering active orders and history by category
   const filteredActiveOrders = ALL_ACTIVE_ORDERS.filter(o =>
@@ -1819,8 +2230,8 @@ export default function UserDashboard({
 
   // Active Summary Data
   const currentSummaryOrder = selectedOrder
-    ? (typeof selectedOrder.summary === 'object' ? selectedOrder : formattedUserOrders.find(o => o.id === selectedOrder.id || o.id === selectedOrder) || null)
-    : (filteredActiveOrders.length > 0 ? filteredActiveOrders[0] : (ALL_ACTIVE_ORDERS.length > 0 ? ALL_ACTIVE_ORDERS[0] : null));
+    ? (typeof selectedOrder.summary === 'object' ? selectedOrder : formattedUserOrders.find(o => o.id === selectedOrder.id || o.id === selectedOrder) || DEMO_ORDER_HISTORY.find(o => o.id === selectedOrder.id || o.id === selectedOrder) || null)
+    : (filteredActiveOrders.length > 0 ? filteredActiveOrders[0] : (filteredHistoryOrders.length > 0 ? filteredHistoryOrders[0] : null));
 
   const activeSummary = currentSummaryOrder ? currentSummaryOrder.summary : null;
 
@@ -2423,20 +2834,31 @@ export default function UserDashboard({
 
                         <div className="food-deal-save-row">
                           <span className="food-save-text">You Save ৳61</span>
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                window.dispatchEvent(new CustomEvent('open-deliveryman-chat', {
-                                  detail: { dealTitle: 'Chicken Biryani' }
-                                }));
-                                onToast('⚡ Food order placed! Live chatbox with Deliveryman opened 🛵');
+                                if (onAddToCart) {
+                                  onAddToCart({
+                                    id: 'fd-1',
+                                    title: 'Chicken Biryani',
+                                    category: 'food',
+                                    price: 199,
+                                    appPrice: 199,
+                                    oldPrice: 269,
+                                    selectedApp: 'foodpanda',
+                                    qty: 1,
+                                    image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=500&q=80'
+                                  });
+                                }
+                                if (onOpenCart) onOpenCart();
+                                onToast && onToast('⚡ Item added! Complete your food order 🛵');
                               }}
                               style={{
                                 background: '#ff2b70',
                                 color: '#ffffff',
                                 border: 'none',
-                                padding: '4px 10px',
+                                padding: '4px 8px',
                                 borderRadius: '8px',
                                 fontSize: '11px',
                                 fontWeight: 800,
@@ -2446,7 +2868,41 @@ export default function UserDashboard({
                                 gap: '3px'
                               }}
                             >
-                              💬 Order &amp; Chat
+                              ⚡ Order
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onAddToCart) {
+                                  onAddToCart({
+                                    id: 'fd-1',
+                                    title: 'Chicken Biryani',
+                                    category: 'food',
+                                    price: 199,
+                                    appPrice: 199,
+                                    oldPrice: 269,
+                                    selectedApp: 'foodpanda',
+                                    qty: 1,
+                                    image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=500&q=80'
+                                  });
+                                }
+                                onToast && onToast('🛒 Added Chicken Biryani to Basket!');
+                              }}
+                              style={{
+                                background: '#10b981',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '4px 8px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}
+                            >
+                              🛒 Add to Basket
                             </button>
                             <span className="food-app-tag tag-fp" onClick={(e) => { e.stopPropagation(); onOpenFoodpanda && onOpenFoodpanda(); }}>foodpanda</span>
                           </div>
@@ -2502,20 +2958,31 @@ export default function UserDashboard({
 
                         <div className="food-deal-save-row">
                           <span className="food-save-text">You Save ৳150</span>
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                window.dispatchEvent(new CustomEvent('open-deliveryman-chat', {
-                                  detail: { dealTitle: 'Farmhouse Pizza' }
-                                }));
-                                onToast('⚡ Food order placed! Live chatbox with Deliveryman opened 🛵');
+                                if (onAddToCart) {
+                                  onAddToCart({
+                                    id: 'fd-2',
+                                    title: 'Farmhouse Pizza',
+                                    category: 'food',
+                                    price: 349,
+                                    appPrice: 349,
+                                    oldPrice: 499,
+                                    selectedApp: 'Foodi',
+                                    qty: 1,
+                                    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=500&q=80'
+                                  });
+                                }
+                                if (onOpenCart) onOpenCart();
+                                onToast && onToast('⚡ Item added! Complete your food order 🛵');
                               }}
                               style={{
                                 background: '#ff2b70',
                                 color: '#ffffff',
                                 border: 'none',
-                                padding: '4px 10px',
+                                padding: '4px 8px',
                                 borderRadius: '8px',
                                 fontSize: '11px',
                                 fontWeight: 800,
@@ -2525,7 +2992,41 @@ export default function UserDashboard({
                                 gap: '3px'
                               }}
                             >
-                              💬 Order &amp; Chat
+                              ⚡ Order
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onAddToCart) {
+                                  onAddToCart({
+                                    id: 'fd-2',
+                                    title: 'Farmhouse Pizza',
+                                    category: 'food',
+                                    price: 349,
+                                    appPrice: 349,
+                                    oldPrice: 499,
+                                    selectedApp: 'Foodi',
+                                    qty: 1,
+                                    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=500&q=80'
+                                  });
+                                }
+                                onToast && onToast('🛒 Added Farmhouse Pizza to Basket!');
+                              }}
+                              style={{
+                                background: '#10b981',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '4px 8px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}
+                            >
+                              🛒 Add to Basket
                             </button>
                             <span className="food-app-tag tag-foodie" onClick={(e) => { e.stopPropagation(); onOpenFoodi && onOpenFoodi(); }}>Foodi</span>
                           </div>
@@ -2581,20 +3082,31 @@ export default function UserDashboard({
 
                         <div className="food-deal-save-row">
                           <span className="food-save-text">You Save ৳121</span>
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                window.dispatchEvent(new CustomEvent('open-deliveryman-chat', {
-                                  detail: { dealTitle: 'Beef Burger Meal' }
-                                }));
-                                onToast('⚡ Food order placed! Live chatbox with Deliveryman opened 🛵');
+                                if (onAddToCart) {
+                                  onAddToCart({
+                                    id: 'fd-3',
+                                    title: 'Beef Burger Meal',
+                                    category: 'food',
+                                    price: 299,
+                                    appPrice: 299,
+                                    oldPrice: 429,
+                                    selectedApp: 'Pathao Food',
+                                    qty: 1,
+                                    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80'
+                                  });
+                                }
+                                if (onOpenCart) onOpenCart();
+                                onToast && onToast('⚡ Item added! Complete your food order 🛵');
                               }}
                               style={{
                                 background: '#ff2b70',
                                 color: '#ffffff',
                                 border: 'none',
-                                padding: '4px 10px',
+                                padding: '4px 8px',
                                 borderRadius: '8px',
                                 fontSize: '11px',
                                 fontWeight: 800,
@@ -2604,7 +3116,41 @@ export default function UserDashboard({
                                 gap: '3px'
                               }}
                             >
-                              💬 Order &amp; Chat
+                              ⚡ Order
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onAddToCart) {
+                                  onAddToCart({
+                                    id: 'fd-3',
+                                    title: 'Beef Burger Meal',
+                                    category: 'food',
+                                    price: 299,
+                                    appPrice: 299,
+                                    oldPrice: 429,
+                                    selectedApp: 'Pathao Food',
+                                    qty: 1,
+                                    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80'
+                                  });
+                                }
+                                onToast && onToast('🛒 Added Beef Burger Meal to Basket!');
+                              }}
+                              style={{
+                                background: '#10b981',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '4px 8px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}
+                            >
+                              🛒 Add to Basket
                             </button>
                             <span className="food-app-tag tag-pathao" onClick={(e) => { e.stopPropagation(); onOpenPathao && onOpenPathao(); }}>Pathao Food</span>
                           </div>
@@ -2658,20 +3204,31 @@ export default function UserDashboard({
 
                         <div className="food-deal-save-row">
                           <span className="food-save-text">You Save ৳90</span>
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                window.dispatchEvent(new CustomEvent('open-deliveryman-chat', {
-                                  detail: { dealTitle: 'Chicken Chowmein' }
-                                }));
-                                onToast('⚡ Food order placed! Live chatbox with Deliveryman opened 🛵');
+                                if (onAddToCart) {
+                                  onAddToCart({
+                                    id: 'fd-4',
+                                    title: 'Chicken Chowmein',
+                                    category: 'food',
+                                    price: 179,
+                                    appPrice: 179,
+                                    oldPrice: 269,
+                                    selectedApp: 'Hungry Naki',
+                                    qty: 1,
+                                    image: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?auto=format&fit=crop&w=500&q=80'
+                                  });
+                                }
+                                if (onOpenCart) onOpenCart();
+                                onToast && onToast('⚡ Item added! Complete your food order 🛵');
                               }}
                               style={{
                                 background: '#ff2b70',
                                 color: '#ffffff',
                                 border: 'none',
-                                padding: '4px 10px',
+                                padding: '4px 8px',
                                 borderRadius: '8px',
                                 fontSize: '11px',
                                 fontWeight: 800,
@@ -2681,7 +3238,41 @@ export default function UserDashboard({
                                 gap: '3px'
                               }}
                             >
-                              💬 Order &amp; Chat
+                              ⚡ Order
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onAddToCart) {
+                                  onAddToCart({
+                                    id: 'fd-4',
+                                    title: 'Chicken Chowmein',
+                                    category: 'food',
+                                    price: 179,
+                                    appPrice: 179,
+                                    oldPrice: 269,
+                                    selectedApp: 'Hungry Naki',
+                                    qty: 1,
+                                    image: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?auto=format&fit=crop&w=500&q=80'
+                                  });
+                                }
+                                onToast && onToast('🛒 Added Chicken Chowmein to Basket!');
+                              }}
+                              style={{
+                                background: '#10b981',
+                                color: '#ffffff',
+                                border: 'none',
+                                padding: '4px 8px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px'
+                              }}
+                            >
+                              🛒 Add to Basket
                             </button>
                             <span className="food-app-tag tag-hungry">Hungry Naki</span>
                           </div>
@@ -2925,28 +3516,28 @@ export default function UserDashboard({
                     className={`order-cat-pill ${orderCategoryFilter === 'all' ? 'active-pink' : ''}`}
                     onClick={() => setOrderCategoryFilter('all')}
                   >
-                    💳 All Orders <span className="order-pill-badge">{formattedUserOrders.length}</span>
+                    💳 All Orders <span className="order-pill-badge">{ALL_ACTIVE_ORDERS.length + ALL_HISTORY_ORDERS.length}</span>
                   </button>
 
                   <button
                     className={`order-cat-pill ${orderCategoryFilter === 'food' ? 'active-pink' : ''}`}
                     onClick={() => setOrderCategoryFilter('food')}
                   >
-                    🍴 Food <span className="order-pill-badge">{formattedUserOrders.filter(o => o.category === 'food').length}</span>
+                    🍴 Food <span className="order-pill-badge">{ALL_ACTIVE_ORDERS.filter(o => o.category === 'food').length + ALL_HISTORY_ORDERS.filter(o => o.category === 'food').length}</span>
                   </button>
 
                   <button
                     className={`order-cat-pill ${orderCategoryFilter === 'ride' ? 'active-pink' : ''}`}
                     onClick={() => setOrderCategoryFilter('ride')}
                   >
-                    🚗 Ride <span className="order-pill-badge">{formattedUserOrders.filter(o => o.category === 'ride').length}</span>
+                    🚗 Ride <span className="order-pill-badge">{ALL_ACTIVE_ORDERS.filter(o => o.category === 'ride').length + ALL_HISTORY_ORDERS.filter(o => o.category === 'ride').length}</span>
                   </button>
 
                   <button
                     className={`order-cat-pill ${orderCategoryFilter === 'skincare' ? 'active-pink' : ''}`}
                     onClick={() => setOrderCategoryFilter('skincare')}
                   >
-                    💧 Skincare <span className="order-pill-badge">{formattedUserOrders.filter(o => o.category === 'skincare').length}</span>
+                    💧 Skincare <span className="order-pill-badge">{ALL_ACTIVE_ORDERS.filter(o => o.category === 'skincare').length + ALL_HISTORY_ORDERS.filter(o => o.category === 'skincare').length}</span>
                   </button>
                 </div>
 
@@ -2965,44 +3556,65 @@ export default function UserDashboard({
                         No active orders at the moment.
                       </div>
                     ) : (
-                      filteredActiveOrders.map(order => (
-                        <div
-                          key={order.id}
-                          className={`active-order-item ${currentSummaryOrder?.id === order.id ? 'selected' : ''}`}
-                          onClick={() => setSelectedOrder(order)}
-                        >
-                          <div className="active-order-left">
-                            <div className={`order-avatar-circle ${order.bgClass}`}>
-                              {order.avatarText}
-                            </div>
-                            <div className="order-main-details">
-                              <h4 className="order-item-title">{order.title}</h4>
-                              <span className="order-item-subtitle">{order.subtitle}</span>
-                              <span className="order-item-code">{order.code}</span>
-                            </div>
-                          </div>
+                      filteredActiveOrders.map(order => {
+                        const isRiderAssigned = order.isRiderAssigned || !!(order.summary?.driverName);
+                        const riderName = order.summary?.driverName?.replace(/^Rider:\s*/, '') || order.deliveryPartner?.name || 'Assigned Rider';
+                        const riderPhone = order.summary?.driverPhone || order.deliveryPartner?.phone;
+                        const riderVehicle = order.summary?.riderVehicle || order.deliveryPartner?.vehicle;
 
-                          <div className="active-order-right">
-                            <div className="order-thumb-wrap">
-                              <img src={order.img} alt={order.title} className="order-thumb-img" />
+                        return (
+                          <div
+                            key={order.id}
+                            className={`active-order-item ${currentSummaryOrder?.id === order.id ? 'selected' : ''}`}
+                            onClick={() => setSelectedOrder(order)}
+                          >
+                            <div className="active-order-left">
+                              <div className={`order-avatar-circle ${order.bgClass}`}>
+                                {order.avatarText}
+                              </div>
+                              <div className="order-main-details">
+                                <h4 className="order-item-title">{order.title}</h4>
+                                <span className="order-item-subtitle">{order.subtitle}</span>
+                                <span className="order-item-code">{order.code}</span>
+                                {isRiderAssigned && (
+                                  <div style={{ marginTop: '6px', padding: '4px 8px', background: '#ecfdf5', borderRadius: '6px', border: '1px solid #a7f3d0', fontSize: '11.5px', color: '#065f46' }}>
+                                    <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <span>🛵 Rider Assigned:</span> <strong>{riderName}</strong>
+                                    </div>
+                                    {riderPhone && (
+                                      <div style={{ fontSize: '11px', color: '#047857', marginTop: '2px' }}>
+                                        📞 {riderPhone} {riderVehicle ? `• 🛵 ${riderVehicle}` : ''}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            <div className="order-status-box">
-                              <span className="badge-in-transit">{order.status}</span>
-                              <span className="order-est-total">{order.estTotal}</span>
+
+                            <div className="active-order-right">
+                              <div className="order-thumb-wrap">
+                                <img src={order.img} alt={order.title} className="order-thumb-img" />
+                              </div>
+                              <div className="order-status-box">
+                                <span className={isRiderAssigned ? 'badge-delivered-green' : 'badge-in-transit'}>
+                                  {isRiderAssigned ? 'Rider Assigned' : order.status}
+                                </span>
+                                <span className="order-est-total">{order.estTotal}</span>
+                              </div>
+                              <button
+                                className="btn-track-outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedOrder(order);
+                                  onToast(`Tracking ${order.title}...`);
+                                }}
+                              >
+                                Track →
+                              </button>
                             </div>
-                            <button
-                              className="btn-track-outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedOrder(order);
-                                onToast(`Tracking ${order.title}...`);
-                              }}
-                            >
-                              Track →
-                            </button>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -3021,7 +3633,10 @@ export default function UserDashboard({
                       </div>
                     ) : (
                       filteredHistoryOrders.map(item => (
-                        <div key={item.id} className="order-history-item" onClick={() => onToast(`Viewing receipt for ${item.title}`)}>
+                        <div key={item.id} className={`order-history-item ${currentSummaryOrder?.id === item.id ? 'selected' : ''}`} onClick={() => {
+                          setSelectedOrder(item);
+                          onToast(`Viewing order summary for ${item.title}`);
+                        }}>
                           <div className="history-left">
                             {item.img ? (
                               <img src={item.img} alt={item.title} style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }} />
@@ -3033,18 +3648,43 @@ export default function UserDashboard({
                             <div className="order-main-details">
                               <h4 className="order-item-title" style={{ fontSize: '13.5px' }}>{item.title}</h4>
                               <span className="order-item-subtitle">{item.subtitle}</span>
+                              {item.summary?.driverName && (
+                                <span style={{ fontSize: '11px', color: '#6b7280', display: 'block', marginTop: '2px' }}>
+                                  🛵 {item.summary.driverName} {item.summary.driverPhone ? `(📞 ${item.summary.driverPhone})` : ''}
+                                </span>
+                              )}
                             </div>
                           </div>
 
                           <div className="history-center-meta">
                             <span className="history-date">📅 {item.date}</span>
-                            <span className={item.status === 'Delivered' ? 'badge-delivered-green' : 'badge-completed'}>
+                            <span className={item.status === 'Delivered' || item.rawStatus === 'DELIVERED' ? 'badge-delivered-green' : 'badge-completed'}>
                               {item.status}
                             </span>
                           </div>
 
-                          <div className="history-right">
+                          <div className="history-right" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span className="history-price">{item.price}</span>
+                            {(item.rawStatus === 'DELIVERED' || item.status === 'Delivered' || item.status === 'Completed') && (
+                              <button
+                                className="btn-reorder-outline"
+                                style={{ borderColor: '#ff2b70', color: '#ff2b70', backgroundColor: '#fff1f2' }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setNewReviewForm({
+                                    user: currentUser?.name || 'Sadman Rahman',
+                                    category: item.category || 'food',
+                                    item: item.title,
+                                    rating: 5,
+                                    comment: '',
+                                    location: 'Dhanmondi, Dhaka'
+                                  });
+                                  setIsAddingReview(true);
+                                }}
+                              >
+                                ⭐ Review
+                              </button>
+                            )}
                             <button
                               className="btn-reorder-outline"
                               onClick={(e) => {
@@ -3281,6 +3921,32 @@ export default function UserDashboard({
                       >
                         📍 Track Order
                       </button>
+
+                      {/* Review Option for Delivered Orders */}
+                      {activeSummary.rawStatus === 'DELIVERED' && (
+                        <div style={{ marginTop: '12px', padding: '12px', background: '#fff1f2', borderRadius: '12px', border: '1px solid #fecdd3', textAlign: 'center' }}>
+                          <p style={{ margin: '0 0 8px 0', fontSize: '13px', fontWeight: 700, color: '#9f1239' }}>
+                            🎉 Order Delivered! How was your experience?
+                          </p>
+                          <button
+                            className="btn-upgrade-pink"
+                            style={{ width: '100%', padding: '8px 12px', fontSize: '12.5px' }}
+                            onClick={() => {
+                              setNewReviewForm({
+                                user: currentUser?.name || 'Sadman Rahman',
+                                category: activeSummary.type || 'food',
+                                item: currentSummaryOrder?.title || activeSummary.orderId,
+                                rating: 5,
+                                comment: '',
+                                location: 'Dhanmondi, Dhaka'
+                              });
+                              setIsAddingReview(true);
+                            }}
+                          >
+                            ⭐ Write Order Review (+৳20 Reward)
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -7218,12 +7884,55 @@ export default function UserDashboard({
       {/* Interactive Write Review Modal */}
       {isAddingReview && (
         <div className="modal-backdrop-blur" onClick={() => setIsAddingReview(false)}>
-          <div className="modal-card-lg animate-fade-in" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
-            <div className="modal-card-header">
-              <h3 className="modal-title-main">✍️ Write a Verified Review</h3>
-              <button className="modal-close-btn" onClick={() => setIsAddingReview(false)}>✕</button>
+          <div
+            className="modal-card-lg animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '520px',
+              height: 'auto',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              borderRadius: '24px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 25px 60px rgba(15, 23, 42, 0.35)'
+            }}
+          >
+            <div
+              className="modal-card-header"
+              style={{
+                padding: '20px 24px',
+                borderBottom: '1px solid #f1f5f9',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'space-between',
+                background: '#ffffff'
+              }}
+            >
+              <h3 className="modal-title-main" style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                ✍️ Write a Verified Review
+              </h3>
+              <button
+                className="modal-close-btn"
+                onClick={() => setIsAddingReview(false)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  border: '1px solid #e2e8f0',
+                  background: '#f8fafc',
+                  color: '#64748b',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center'
+                }}
+              >
+                ✕
+              </button>
             </div>
-            <form onSubmit={handleAddNewReview} className="modal-body-content" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+            <form onSubmit={handleAddNewReview} className="modal-body-content" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="complain-field-group">
                 <label className="complain-label">Your Name</label>
                 <input
@@ -7249,14 +7958,16 @@ export default function UserDashboard({
                       key={cat.key}
                       style={{
                         flex: 1,
-                        padding: '10px',
-                        borderRadius: '10px',
-                        border: newReviewForm.category === cat.key ? '2px solid #ff2b70' : '1px solid #cbd5e1',
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        border: newReviewForm.category === cat.key ? '2px solid #ff2b70' : '1px solid #e2e8f0',
                         background: newReviewForm.category === cat.key ? '#fff1f2' : '#ffffff',
                         color: newReviewForm.category === cat.key ? '#ff2b70' : '#475569',
                         fontWeight: 800,
+                        fontSize: '13.5px',
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        boxShadow: newReviewForm.category === cat.key ? '0 2px 8px rgba(255, 43, 112, 0.15)' : 'none'
                       }}
                       onClick={() => setNewReviewForm({ ...newReviewForm, category: cat.key })}
                     >
@@ -7280,7 +7991,7 @@ export default function UserDashboard({
 
               <div className="complain-field-group">
                 <label className="complain-label">Your Rating</label>
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: '#f8fafc', padding: '10px 16px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                   {[1, 2, 3, 4, 5].map(star => (
                     <button
                       type="button"
@@ -7290,14 +8001,17 @@ export default function UserDashboard({
                         border: 'none',
                         fontSize: '24px',
                         cursor: 'pointer',
-                        filter: star <= newReviewForm.rating ? 'none' : 'grayscale(100%) opacity(40%)'
+                        padding: 0,
+                        transition: 'transform 0.15s ease',
+                        transform: star <= newReviewForm.rating ? 'scale(1.12)' : 'scale(1)',
+                        filter: star <= newReviewForm.rating ? 'none' : 'grayscale(100%) opacity(35%)'
                       }}
                       onClick={() => setNewReviewForm({ ...newReviewForm, rating: star })}
                     >
                       ⭐
                     </button>
                   ))}
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#f59e0b', marginLeft: '6px' }}>{newReviewForm.rating}.0 / 5.0</span>
+                  <span style={{ fontSize: '14px', fontWeight: 800, color: '#d97706', marginLeft: '8px' }}>{newReviewForm.rating}.0 / 5.0</span>
                 </div>
               </div>
 
@@ -7316,7 +8030,7 @@ export default function UserDashboard({
                 <label className="complain-label">Review Feedback / Experience</label>
                 <textarea
                   className="complain-textarea"
-                  rows={3}
+                  rows={4}
                   value={newReviewForm.comment}
                   onChange={(e) => setNewReviewForm({ ...newReviewForm, comment: e.target.value })}
                   placeholder="Share details about delivery speed, authenticity, discount savings, driver behavior..."
@@ -7324,9 +8038,45 @@ export default function UserDashboard({
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-                <button type="button" className="btn-cancel-modal" onClick={() => setIsAddingReview(false)}>Cancel</button>
-                <button type="submit" className="btn-confirm-ride-booking" style={{ background: '#ff2b70' }}>Publish &amp; Claim ৳20 🎉</button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+                <button
+                  type="button"
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: '12px',
+                    border: '1px solid #cbd5e1',
+                    background: '#ffffff',
+                    color: '#475569',
+                    fontWeight: 700,
+                    fontSize: '13.5px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={() => setIsAddingReview(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '10px 24px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #ff2b70 0%, #e11d48 100%)',
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    fontSize: '13.5px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(255, 43, 112, 0.35)',
+                    transition: 'all 0.2s ease',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Publish &amp; Claim ৳20 🎉
+                </button>
               </div>
             </form>
           </div>

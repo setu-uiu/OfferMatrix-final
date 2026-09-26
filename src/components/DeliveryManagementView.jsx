@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FoodPlatformView from './FoodPlatformView';
 import RidePlatformView from './RidePlatformView';
 import SkincarePlatformView from './SkincarePlatformView';
@@ -17,6 +17,7 @@ import {
   Target, ShieldCheck, MessageSquare, MoreVertical, CheckCircle2, ArrowRight, Radio,
   Navigation, Send, Copy, CreditCard, UserPlus
 } from 'lucide-react';
+import { assignRiderToOrder, fetchDeliveryPartners } from '../services/deliveryApi';
 
 export default function DeliveryManagementView({ onBack, onLogout, onToast, initialTab = 'Delivery Partners' }) {
   const [activeSidebarItem, setActiveSidebarItem] = useState(initialTab || 'Delivery Partners');
@@ -30,6 +31,35 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
   // Quick action toast helper
   const handleAction = (actionName) => {
     if (onToast) onToast(`${actionName} action triggered`);
+  };
+
+  // Perform backend PostgreSQL rider assignment transaction
+  const handleAssignRiderInView = async (partner) => {
+    const targetPartner = partner || selectedPartner;
+    const orderId = 'OM-20250922-0012';
+
+    if (targetPartner.statusType === 'suspended' || targetPartner.isSuspended) {
+      if (onToast) onToast(`❌ Cannot assign rider ${targetPartner.name}: Rider is currently suspended.`);
+      return;
+    }
+    if (targetPartner.statusType === 'offline' || targetPartner.status === 'Offline') {
+      if (onToast) onToast(`⚠️ Rider ${targetPartner.name} is offline. Please select an available rider.`);
+      return;
+    }
+
+    if (onToast) onToast(`⏳ Assigning ${targetPartner.name} in PostgreSQL database...`);
+
+    const res = await assignRiderToOrder({
+      orderId,
+      deliveryPartnerId: targetPartner.id || 'dp-1',
+      orderType: 'food'
+    });
+
+    if (res.success || res.data) {
+      if (onToast) onToast(`✅ Rider ${targetPartner.name} assigned to Order #${orderId}! Saved in PostgreSQL with audit log.`);
+    } else {
+      if (onToast) onToast(`⚠️ ${res.error || 'Failed to assign rider'}`);
+    }
   };
 
   // Partners Data List
@@ -718,7 +748,7 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
                         </div>
 
                         <button
-                          onClick={() => handleAction(`Assigned ${partner.name}`)}
+                          onClick={() => handleAssignRiderInView(partner)}
                           style={{
                             padding: '6px 14px',
                             borderRadius: '8px',
@@ -992,7 +1022,7 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
                   {/* Action Buttons */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '10px', marginTop: '16px' }}>
                     <button
-                      onClick={() => handleAction('Assign Partner Success')}
+                      onClick={() => handleAssignRiderInView(selectedPartner)}
                       style={{
                         padding: '11px',
                         borderRadius: '10px',

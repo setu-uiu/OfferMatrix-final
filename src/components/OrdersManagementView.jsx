@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search, ShoppingBag, CheckCircle2, Clock, X, Calendar, Download,
   Filter, RefreshCw, Eye, Edit, MoreVertical, Users, MapPin, Copy,
-  CreditCard, Bike, Phone, Send, ChevronDown
+  CreditCard, Bike, Phone, Send, ChevronDown, AlertCircle, ShieldAlert, Check, UserPlus
 } from 'lucide-react';
+import { fetchDeliveryPartners, assignRiderToOrder } from '../services/deliveryApi';
 
 export default function OrdersManagementView({ onToast }) {
   const [activeStatusFilter, setActiveStatusFilter] = useState('All Orders');
@@ -15,13 +16,20 @@ export default function OrdersManagementView({ onToast }) {
   const [selectedDetailTab, setSelectedDetailTab] = useState('Summary');
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(true);
 
+  // Delivery partner assignment modal states
+  const [assignModalOrder, setAssignModalOrder] = useState(null);
+  const [availableRiders, setAvailableRiders] = useState([]);
+  const [loadingRiders, setLoadingRiders] = useState(false);
+  const [assigningRiderId, setAssigningRiderId] = useState(null);
+  const [assignError, setAssignError] = useState(null);
+
   // Toast helper
   const handleAction = (msg) => {
     if (onToast) onToast(msg);
   };
 
-  // Full 10 Sample Orders Matching Screenshot 1
-  const ordersList = [
+  // Orders List State (initialized with sample orders)
+  const [ordersList, setOrdersList] = useState([
     {
       id: 'OM-20250922-0012',
       placedDate: 'Sep 22, 3:24 PM',
@@ -42,20 +50,8 @@ export default function OrdersManagementView({ onToast }) {
       storeName: 'Foodpanda Restaurant • Food',
       eta: '8 min (2.3 km)',
       items: [
-        {
-          name: 'Zinger Burger',
-          qty: 2,
-          unitPrice: 120,
-          totalPrice: 240,
-          img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=160&q=80'
-        },
-        {
-          name: 'French Fries',
-          qty: 1,
-          unitPrice: 80,
-          totalPrice: 80,
-          img: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=160&q=80'
-        }
+        { name: 'Zinger Burger', qty: 2, unitPrice: 120, totalPrice: 240, img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=160&q=80' },
+        { name: 'French Fries', qty: 1, unitPrice: 80, totalPrice: 80, img: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=160&q=80' }
       ],
       subtotal: 320,
       deliveryFee: 50,
@@ -72,7 +68,7 @@ export default function OrdersManagementView({ onToast }) {
       phone: '+880 1689 123456',
       itemsSummary: '1 × Beef Tehari, 2 × Coke',
       total: '৳ 650',
-      status: 'Preparing',
+      status: 'Pending',
       partner: null,
       orderTime: '2:10 PM',
       address: 'Plot 44, Block C, Gulshan 1 Dhaka',
@@ -303,7 +299,77 @@ export default function OrdersManagementView({ onToast }) {
       discount: 40,
       couponDiscount: 0
     }
-  ];
+  ]);
+
+  // Fetch available delivery partners from PostgreSQL backend
+  const openAssignRiderModal = async (order) => {
+    setAssignModalOrder(order);
+    setAssignError(null);
+    setLoadingRiders(true);
+
+    const fetchedRiders = await fetchDeliveryPartners();
+    if (fetchedRiders && fetchedRiders.length > 0) {
+      setAvailableRiders(fetchedRiders);
+    } else {
+      // Fallback default riders array if server not responding
+      setAvailableRiders([
+        { id: 'dp-1', name: 'Rahim Ahmed', phone: '+880 1712 345678', partnerCode: 'DP-1024', vehicle: 'Honda Dream 110', licensePlate: 'DHA-1234', rating: 4.8, totalDeliveries: 842, status: 'AVAILABLE', isVerified: true, isSuspended: false, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80' },
+        { id: 'dp-2', name: 'Sakib Hasan', phone: '+880 1819 876543', partnerCode: 'DP-1088', vehicle: 'Yamaha FZ-S', licensePlate: 'DHA-5678', rating: 4.7, totalDeliveries: 620, status: 'BUSY', isVerified: true, isSuspended: false, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80' },
+        { id: 'dp-3', name: 'Mahmudul Islam', phone: '+880 1911 223344', partnerCode: 'DP-1102', vehicle: 'Runner Turbo 125', licensePlate: 'DHA-9012', rating: 4.6, totalDeliveries: 598, status: 'AVAILABLE', isVerified: true, isSuspended: false, avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&q=80' },
+        { id: 'dp-4', name: 'Tarek Rahman', phone: '+880 1677 334455', partnerCode: 'DP-1145', vehicle: 'TVS Metro Plus', licensePlate: 'DHA-3456', rating: 4.5, totalDeliveries: 410, status: 'AVAILABLE', isVerified: true, isSuspended: false, avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&q=80' },
+        { id: 'dp-5', name: 'Hasan Ali', phone: '+880 1552 667788', partnerCode: 'DP-1201', vehicle: 'Discover 125', licensePlate: 'DHA-7890', rating: 4.4, totalDeliveries: 280, status: 'OFFLINE', isVerified: true, isSuspended: false, avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80' },
+        { id: 'dp-6', name: 'Imran Khan', phone: '+880 1300 998877', partnerCode: 'DP-1290', vehicle: 'Hero Splendor', licensePlate: 'DHA-2468', rating: 4.3, totalDeliveries: 150, status: 'SUSPENDED', isVerified: false, isSuspended: true, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80' }
+      ]);
+    }
+    setLoadingRiders(false);
+  };
+
+  // Perform transactional rider assignment via backend PostgreSQL API
+  const handleAssignRiderToOrder = async (rider) => {
+    if (!assignModalOrder) return;
+    if (rider.isSuspended) {
+      setAssignError(`Rider ${rider.name} is suspended and cannot accept assignments.`);
+      return;
+    }
+    if (rider.status === 'OFFLINE' || rider.status === 'SUSPENDED') {
+      setAssignError(`Rider ${rider.name} is currently ${rider.status.toLowerCase()} and unavailable.`);
+      return;
+    }
+
+    setAssigningRiderId(rider.id);
+    setAssignError(null);
+
+    // Perform API post to PostgreSQL transaction endpoint
+    const res = await assignRiderToOrder({
+      orderId: assignModalOrder.id,
+      deliveryPartnerId: rider.id,
+      orderType: ['choice', 'kirei', 'makeup'].includes(assignModalOrder.platformType) ? 'skincare' : 'food'
+    });
+
+    setAssigningRiderId(null);
+
+    if (res.success || res.data) {
+      // Persist & Update local state
+      setOrdersList(prevOrders => prevOrders.map(o => {
+        if (o.id === assignModalOrder.id) {
+          return {
+            ...o,
+            partner: rider.name,
+            partnerCode: rider.partnerCode || 'DP-1024',
+            partnerAvatar: rider.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
+            partnerPhone: rider.phone,
+            status: 'On the Way'
+          };
+        }
+        return o;
+      }));
+
+      handleAction(`✅ Rider ${rider.name} assigned to Order #${assignModalOrder.id}! Saved in PostgreSQL database with audit log.`);
+      setAssignModalOrder(null);
+    } else {
+      setAssignError(res.error || 'Failed to assign rider in PostgreSQL database.');
+    }
+  };
 
   // Platform Badge Renderer
   const renderPlatformBadge = (platformName, platformType) => {
@@ -913,7 +979,28 @@ export default function OrdersManagementView({ onToast }) {
                               style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
                             />
                             <div>
-                              <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '12px' }}>{ord.partner}</div>
+                              <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span>{ord.partner}</span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openAssignRiderModal(ord);
+                                  }}
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#ff2b70',
+                                    fontSize: '10px',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline',
+                                    padding: 0
+                                  }}
+                                  title="Change assigned rider"
+                                >
+                                  Change
+                                </button>
+                              </div>
                               <div style={{ fontSize: '10.5px', color: '#94a3b8' }}>{ord.partnerCode}</div>
                             </div>
                           </div>
@@ -923,7 +1010,7 @@ export default function OrdersManagementView({ onToast }) {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleAction(`Assign partner modal for ${ord.id}`);
+                                openAssignRiderModal(ord);
                               }}
                               style={{
                                 background: '#fff0f5',
@@ -933,10 +1020,14 @@ export default function OrdersManagementView({ onToast }) {
                                 padding: '3px 10px',
                                 fontSize: '11px',
                                 fontWeight: 800,
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
                               }}
                             >
-                              Assign
+                              <Bike size={12} />
+                              <span>Assign</span>
                             </button>
                           </div>
                         )}
@@ -957,11 +1048,11 @@ export default function OrdersManagementView({ onToast }) {
                             <Eye size={14} />
                           </button>
                           <button
-                            onClick={() => handleAction(`Edit order ${ord.id}`)}
-                            style={{ border: 'none', background: '#f1f5f9', borderRadius: '6px', padding: '6px', cursor: 'pointer', color: '#475569' }}
-                            title="Edit Order"
+                            onClick={() => openAssignRiderModal(ord)}
+                            style={{ border: 'none', background: '#fff0f5', borderRadius: '6px', padding: '6px', cursor: 'pointer', color: '#ff2b70' }}
+                            title="Assign Delivery Partner"
                           >
-                            <Edit size={14} />
+                            <Bike size={14} />
                           </button>
                           <button
                             onClick={() => handleAction(`More options for ${ord.id}`)}
@@ -1302,6 +1393,265 @@ export default function OrdersManagementView({ onToast }) {
           </div>
         )}
       </div>
+
+      {/* ================= ASSIGN RIDER MODAL ================= */}
+      {assignModalOrder && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justify: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '24px',
+            width: '100%',
+            maxWidth: '560px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: '90vh'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #fff0f5 0%, #fef2f2 100%)',
+              padding: '20px 24px',
+              borderBottom: '1px solid #fecdd3',
+              display: 'flex',
+              alignItems: 'center',
+              justify: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  background: '#ff2b70',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  boxShadow: '0 4px 12px rgba(255, 43, 112, 0.3)'
+                }}>
+                  <Bike size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                    Assign Delivery Partner
+                  </h3>
+                  <p style={{ fontSize: '12.5px', color: '#ff2b70', margin: '2px 0 0 0', fontWeight: 700 }}>
+                    Order #{assignModalOrder.id} • {assignModalOrder.customer}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setAssignModalOrder(null)}
+                style={{
+                  border: 'none',
+                  background: '#ffffff',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justify: 'center',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Error alert if any */}
+            {assignError && (
+              <div style={{
+                background: '#fef2f2',
+                borderLeft: '4px solid #ef4444',
+                padding: '12px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                color: '#991b1b',
+                fontSize: '12.5px',
+                fontWeight: 600
+              }}>
+                <ShieldAlert size={18} color="#ef4444" style={{ flexShrink: 0 }} />
+                <span>{assignError}</span>
+              </div>
+            )}
+
+            {/* Order Target Summary */}
+            <div style={{ padding: '14px 24px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Delivery Address: </span>
+                <span style={{ fontWeight: 800, color: '#0f172a' }}>{assignModalOrder.address}</span>
+              </div>
+              <span style={{ fontWeight: 900, color: '#ff2b70', fontSize: '14px' }}>{assignModalOrder.total}</span>
+            </div>
+
+            {/* Riders List Body */}
+            <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Select Available Rider ({availableRiders.length})
+              </div>
+
+              {loadingRiders ? (
+                <div style={{ padding: '30px', textAlign: 'center', color: '#64748b', fontSize: '13px', fontWeight: 600 }}>
+                  ⏳ Loading available riders from PostgreSQL database...
+                </div>
+              ) : (
+                availableRiders.map((rider) => {
+                  const isAvailable = rider.status === 'AVAILABLE' && !rider.isSuspended;
+                  const isBusy = rider.status === 'BUSY';
+                  const isOffline = rider.status === 'OFFLINE';
+                  const isSuspended = rider.isSuspended || rider.status === 'SUSPENDED';
+
+                  let statusBadgeBg = '#dcfce7';
+                  let statusBadgeColor = '#16a34a';
+                  let statusText = 'Available';
+
+                  if (isBusy) {
+                    statusBadgeBg = '#fef3c7';
+                    statusBadgeColor = '#d97706';
+                    statusText = 'Busy';
+                  } else if (isOffline) {
+                    statusBadgeBg = '#f1f5f9';
+                    statusBadgeColor = '#64748b';
+                    statusText = 'Offline';
+                  } else if (isSuspended) {
+                    statusBadgeBg = '#fee2e2';
+                    statusBadgeColor = '#dc2626';
+                    statusText = 'Suspended';
+                  }
+
+                  return (
+                    <div
+                      key={rider.id}
+                      style={{
+                        border: isAvailable ? '1.5px solid #ff2b70' : '1px solid #e2e8f0',
+                        borderRadius: '16px',
+                        padding: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justify: 'space-between',
+                        background: isAvailable ? '#fff0f5' : '#ffffff',
+                        opacity: isSuspended || isOffline ? 0.7 : 1,
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ position: 'relative' }}>
+                          <img
+                            src={rider.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80'}
+                            alt={rider.name}
+                            style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }}
+                          />
+                          <span style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            right: 0,
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            background: isAvailable ? '#10b981' : isBusy ? '#f59e0b' : '#ef4444',
+                            border: '2px solid #fff'
+                          }}></span>
+                        </div>
+
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '14px', fontWeight: 900, color: '#0f172a' }}>{rider.name}</span>
+                            <span style={{
+                              background: statusBadgeBg,
+                              color: statusBadgeColor,
+                              fontSize: '10.5px',
+                              fontWeight: 800,
+                              padding: '2px 8px',
+                              borderRadius: '99px'
+                            }}>
+                              {statusText}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>★ {rider.rating || 4.8} ({rider.totalDeliveries || 100}+ jobs)</span>
+                            <span>•</span>
+                            <span>{rider.vehicle || 'Motorcycle'}</span>
+                          </div>
+
+                          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                            Phone: {rider.phone} • {rider.licensePlate || 'DHA-1234'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleAssignRiderToOrder(rider)}
+                        disabled={assigningRiderId === rider.id || isSuspended || isOffline}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '10px',
+                          border: 'none',
+                          background: isAvailable ? '#ff2b70' : '#cbd5e1',
+                          color: '#ffffff',
+                          fontSize: '12px',
+                          fontWeight: 800,
+                          cursor: isAvailable ? 'pointer' : 'not-allowed',
+                          boxShadow: isAvailable ? '0 4px 12px rgba(255, 43, 112, 0.25)' : 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        {assigningRiderId === rider.id ? (
+                          <span>Assigning...</span>
+                        ) : (
+                          <>
+                            <UserPlus size={14} />
+                            <span>{isSuspended ? 'Suspended' : isOffline ? 'Offline' : 'Assign'}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setAssignModalOrder(null)}
+                style={{
+                  padding: '9px 18px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  color: '#475569',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
