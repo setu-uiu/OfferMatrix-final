@@ -33,13 +33,57 @@ export default function UserDashboard({
   onOpenUber,
   onOpenObhai,
   onOpenIndriver,
+  notifications: propNotifications = [],
   initialTab = 'food'
 }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isNotifDropdownOpen, setIsNotifDropdownOpen] = useState(false);
+  const [dbNotifications, setDbNotifications] = useState([]);
   const [activeTab, setActiveTab] = useState(initialTab);
   const [activeCategoryMode, setActiveCategoryMode] = useState(
     initialTab === 'ride' ? 'ride' : initialTab === 'skincare' ? 'skincare' : initialTab === 'food' ? 'food' : 'dashboard'
   );
+
+  const currentUserId = currentUser?.id || 'usr-nusrat';
+
+  const fetchLiveNotifications = async () => {
+    try {
+      const notifs = await OfferMatrixAPI.getNotifications(currentUserId);
+      if (notifs && Array.isArray(notifs)) {
+        setDbNotifications(notifs);
+      }
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    fetchLiveNotifications();
+    const interval = setInterval(fetchLiveNotifications, 4000);
+    return () => clearInterval(interval);
+  }, [currentUserId]);
+
+  const activeNotifications = dbNotifications.length > 0 ? dbNotifications : propNotifications;
+  const unreadCount = activeNotifications.filter(n => !n.isRead).length;
+
+  const handleToggleRead = async (notifId, currentIsRead) => {
+    try {
+      setDbNotifications(prev => prev.map(n => n.id === notifId ? { ...n, isRead: !currentIsRead } : n));
+      await OfferMatrixAPI.markNotificationRead(notifId, !currentIsRead);
+      fetchLiveNotifications();
+    } catch (err) {
+      if (onToast) onToast('Failed to update notification status');
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      setDbNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      await OfferMatrixAPI.markAllNotificationsRead(currentUserId);
+      fetchLiveNotifications();
+      if (onToast) onToast('All notifications marked as read');
+    } catch (err) {
+      if (onToast) onToast('Failed to mark all as read');
+    }
+  };
 
   useEffect(() => {
     if (initialTab) {
@@ -2269,10 +2313,105 @@ export default function UserDashboard({
         </div>
 
         <div className="dashboard-top-right">
-          <button className="dash-icon-btn" title="Notifications">
-            <Bell size={18} />
-            <span className="dash-notif-dot"></span>
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button 
+              className="dash-icon-btn" 
+              title="Notifications"
+              onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)}
+              style={{ position: 'relative' }}
+            >
+              <Bell size={18} />
+              {unreadCount > 0 && (
+                <span className="dash-notif-dot" style={{ background: '#ef4444', color: '#ffffff', fontSize: '10px', fontWeight: 800, padding: '1px 5px', borderRadius: '10px', top: '-4px', right: '-4px' }}>
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {isNotifDropdownOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '8px',
+                  width: '380px',
+                  maxHeight: '480px',
+                  background: '#ffffff',
+                  borderRadius: '16px',
+                  boxShadow: '0 20px 30px -10px rgba(0,0,0,0.15), 0 10px 15px -5px rgba(0,0,0,0.08)',
+                  border: '1px solid #e5e7eb',
+                  padding: '16px',
+                  zIndex: 1000,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>Notifications</h3>
+                    {unreadCount > 0 && (
+                      <span style={{ background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 700 }}>
+                        {unreadCount} Unread
+                      </span>
+                    )}
+                  </div>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllRead}
+                      style={{ background: 'none', border: 'none', color: '#ff2b70', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ overflowY: 'auto', maxHeight: '380px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {activeNotifications.length === 0 ? (
+                    <div style={{ padding: '24px 12px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
+                      🔔 No notifications yet
+                    </div>
+                  ) : (
+                    activeNotifications.map(n => (
+                      <div
+                        key={n.id}
+                        onClick={() => handleToggleRead(n.id, n.isRead)}
+                        style={{
+                          padding: '12px',
+                          borderRadius: '12px',
+                          background: n.isRead ? '#f8fafc' : '#fff0f5',
+                          border: n.isRead ? '1px solid #e2e8f0' : '1px solid #fecdd3',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#0f172a' }}>{n.title}</span>
+                          <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>
+                            {n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                          </span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '12.5px', color: '#475569', lineHeight: 1.4 }}>{n.message}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
+                          <span style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 800, color: n.type === 'food' ? '#ff2b70' : n.type === 'skincare' ? '#db2777' : '#2563eb' }}>
+                            {n.type || 'system'}
+                          </span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: n.isRead ? '#94a3b8' : '#ff2b70' }}>
+                            {n.isRead ? 'Read ✓' : 'Mark as read'}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           <button className="dash-saved-btn" onClick={onOpenSaved}>
             <Heart size={16} fill="#ff2b70" color="#ff2b70" />

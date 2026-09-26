@@ -65,6 +65,8 @@ export const OfferMatrixAPI = {
   getReviews: () => fetchJson('/reviews'),
   createReview: (data) => fetchJson('/reviews', { method: 'POST', body: JSON.stringify(data) }),
   getNotifications: (userId) => fetchJson(`/notifications/${userId}`),
+  markNotificationRead: (id, isRead = true) => fetchJson(`/notifications/${id}/read`, { method: 'PATCH', body: JSON.stringify({ isRead }) }),
+  markAllNotificationsRead: (userId) => fetchJson(`/notifications/user/${userId}/read-all`, { method: 'PATCH' }),
   getAuditLogs: () => fetchJson('/audit-logs'),
 
   // Orders & Domain API

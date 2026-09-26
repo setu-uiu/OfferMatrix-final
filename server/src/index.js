@@ -705,6 +705,31 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
           deliveryPartner: true
         }
       });
+
+      // Create notifications for Order Placed and Waiting for Rider
+      const platformName = calculatedItems[0]?.selectedApp || 'Foodpanda';
+      await tx.notification.create({
+        data: {
+          userId: req.user.userId,
+          orderId: created.id,
+          title: `Order placed for ${platformName} order ${orderNumber}`,
+          message: `Your order has been placed. Order placed for ${platformName} order ${orderNumber}.`,
+          type: 'food',
+          isRead: false
+        }
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: req.user.userId,
+          orderId: created.id,
+          title: `Waiting for rider for ${platformName} order ${orderNumber}`,
+          message: `Your order is waiting for a rider. Waiting for rider for ${platformName} order ${orderNumber}.`,
+          type: 'food',
+          isRead: false
+        }
+      });
+
       return created;
     });
 
@@ -895,6 +920,29 @@ app.post('/api/rides', authenticateToken, async (req, res) => {
       include: { user: true }
     });
 
+    const platformDisplay = normalizedPlatform.toUpperCase();
+    await prisma.notification.create({
+      data: {
+        userId: req.user.userId,
+        orderId: newTrip.id,
+        title: `Order placed for ${platformDisplay} ride ${tripNumber}`,
+        message: `Your order has been placed. Trip requested for ${platformDisplay} ride ${tripNumber}.`,
+        type: 'ride',
+        isRead: false
+      }
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: req.user.userId,
+        orderId: newTrip.id,
+        title: `Waiting for rider for ${platformDisplay} ride ${tripNumber}`,
+        message: `Your order is waiting for a rider. Waiting for driver for ${platformDisplay} ride ${tripNumber}.`,
+        type: 'ride',
+        isRead: false
+      }
+    });
+
     res.status(201).json({
       success: true,
       message: 'Ride trip requested successfully!',
@@ -1014,16 +1062,16 @@ app.post('/api/rides/:id/status', async (req, res) => {
     let notifMsg = '';
 
     if (status === 'DRIVER_ARRIVING') {
-      notifTitle = '🚖 Driver Arriving';
+      notifTitle = `Driver Arriving - ${trip.platform.toUpperCase()} ride ${trip.tripNumber}`;
       notifMsg = `Driver ${trip.driverName || 'Driver'} is arriving at ${trip.pickup}!`;
     } else if (status === 'IN_TRIP' || status === 'PICKED_UP') {
-      notifTitle = '📍 Ride Started';
-      notifMsg = `You are on your way to ${trip.destination} with ${trip.driverName || 'your driver'}.`;
+      notifTitle = `Out for delivery for ${trip.platform.toUpperCase()} ride ${trip.tripNumber}`;
+      notifMsg = `Your order is on the way. You are on your way to ${trip.destination} with ${trip.driverName || 'your driver'}.`;
     } else if (status === 'COMPLETED') {
-      notifTitle = '🎉 Ride Completed';
-      notifMsg = `Your ${trip.platform.toUpperCase()} trip #${trip.tripNumber} to ${trip.destination} is complete. Total fare: ৳${trip.finalFare}.`;
+      notifTitle = `Delivered - ${trip.platform.toUpperCase()} ride ${trip.tripNumber}`;
+      notifMsg = `Your order has been delivered. Your ${trip.platform.toUpperCase()} trip #${trip.tripNumber} to ${trip.destination} is complete.`;
     } else if (status === 'CANCELLED') {
-      notifTitle = '❌ Ride Cancelled';
+      notifTitle = `Cancelled - ${trip.platform.toUpperCase()} ride ${trip.tripNumber}`;
       notifMsg = `Your ${trip.platform.toUpperCase()} trip #${trip.tripNumber} has been cancelled.`;
     }
 
@@ -1454,6 +1502,35 @@ app.get('/api/notifications/:userId', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+app.patch('/api/notifications/:id/read', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isRead } = req.body;
+    const readStatus = typeof isRead === 'boolean' ? isRead : true;
+    const notification = await prisma.notification.update({
+      where: { id },
+      data: { isRead: readStatus }
+    });
+    res.json({ success: true, notification });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.patch('/api/notifications/user/:userId/read-all', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await prisma.notification.updateMany({
+      where: { userId },
+      data: { isRead: true }
+    });
+    res.json({ success: true, message: 'All notifications marked as read' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 // 16. Admin Audit Logs API
 app.get('/api/audit-logs', async (req, res) => {
@@ -2226,6 +2303,36 @@ app.post('/api/delivery-partner/orders/:id/status', async (req, res) => {
       });
     }
 
+    // Create notifications for Out for delivery or Delivered
+    const platformName = isFood
+      ? (updatedOrder.merchantName || 'Foodpanda')
+      : (updatedOrder.storePlatform ? updatedOrder.storePlatform.replace(/_/g, ' ').toUpperCase() : 'Choice Legacy');
+    const orderNum = updatedOrder.orderNumber || updatedOrder.id;
+
+    if (['PICKED_UP', 'ON_THE_WAY', 'SHIPPED'].includes(status)) {
+      await prisma.notification.create({
+        data: {
+          userId: updatedOrder.userId,
+          orderId: updatedOrder.id,
+          title: `Out for delivery for ${platformName} order ${orderNum}`,
+          message: `Your order is on the way. Out for delivery for ${platformName} order ${orderNum}.`,
+          type: isFood ? 'food' : 'skincare',
+          isRead: false
+        }
+      });
+    } else if (status === 'DELIVERED') {
+      await prisma.notification.create({
+        data: {
+          userId: updatedOrder.userId,
+          orderId: updatedOrder.id,
+          title: `Delivered - ${platformName} order ${orderNum}`,
+          message: `Your order has been delivered. Your ${platformName} order ${orderNum} has been delivered.`,
+          type: isFood ? 'food' : 'skincare',
+          isRead: false
+        }
+      });
+    }
+
     res.json({
       success: true,
       message: `Order #${updatedOrder.orderNumber} status updated to '${status}'`,
@@ -2385,6 +2492,29 @@ app.post('/api/orders/skincare', authenticateToken, async (req, res) => {
         items: { create: calculatedItems }
       },
       include: { items: true, deliveryPartner: true }
+    });
+
+    const storeDisplay = (storePlatform || 'choice_legacy').replace(/_/g, ' ').toUpperCase();
+    await prisma.notification.create({
+      data: {
+        userId: req.user.userId,
+        orderId: newSkincareOrder.id,
+        title: `Order placed for ${storeDisplay} order ${orderNumber}`,
+        message: `Your order has been placed. Order placed for ${storeDisplay} order ${orderNumber}.`,
+        type: 'skincare',
+        isRead: false
+      }
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: req.user.userId,
+        orderId: newSkincareOrder.id,
+        title: `Waiting for rider for ${storeDisplay} order ${orderNumber}`,
+        message: `Your order is waiting for a rider. Waiting for rider for ${storeDisplay} order ${orderNumber}.`,
+        type: 'skincare',
+        isRead: false
+      }
     });
 
     res.status(201).json({
@@ -2572,13 +2702,18 @@ app.post('/api/delivery/assign', async (req, res) => {
       });
 
       // 9. Create user notification
+      const platformName = isFoodOrder
+        ? (order.merchantName || 'Foodpanda')
+        : (order.storePlatform ? order.storePlatform.replace(/_/g, ' ').toUpperCase() : 'Choice Legacy');
+      const orderNum = order.orderNumber || order.id;
+
       const notification = await tx.notification.create({
         data: {
           userId: order.userId,
           orderId: order.id,
-          title: 'Delivery Rider Assigned 🛵',
-          message: `Delivery rider ${rider.name} (${rider.phone}) has been assigned to your order #${order.orderNumber || order.id}.`,
-          type: 'delivery',
+          title: `Rider assigned for ${platformName} order ${orderNum}`,
+          message: `${rider.name} has been assigned to your order. Rider assigned for ${platformName} order ${orderNum}.`,
+          type: isFoodOrder ? 'food' : 'skincare',
           isRead: false
         }
       });
