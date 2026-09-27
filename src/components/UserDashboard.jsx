@@ -1013,27 +1013,126 @@ export default function UserDashboard({
     { name: 'Mehedi H.', location: 'Motijheel', rating: 4, category: 'ride', item: 'Pathao Car', comment: 'Clean car and polite driver Rahim. Very comfortable commute.', date: '1 week ago', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&q=80', itemImg: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=300&q=80' }
   ];
 
-  const handleAddNewComplaint = (e) => {
-    e.preventDefault();
-    if (!newComplaintDesc.trim()) return;
+  const handleAddNewComplaint = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const finalDesc = (newComplaintDesc || '').trim();
+    if (!finalDesc) {
+      if (onToast) onToast('⚠️ Please enter problem description before submitting');
+      return;
+    }
 
-    const newTicket = {
-      id: `cmp-${Date.now()}`,
-      title: `Complaint re: ${newComplaintTarget} (${newComplaintCategory.toUpperCase()})`,
+    const finalTitle = (complainNewTitle || '').trim() || (newComplaintTarget ? `Complaint re: ${newComplaintTarget}` : `Report Issue (${newComplaintCategory.toUpperCase()})`);
+
+    const payload = {
+      title: finalTitle,
       category: newComplaintCategory,
-      target: newComplaintTarget,
-      status: 'Under Review 🟡',
-      statusClass: 'badge-status-yellow',
-      date: 'Just now',
-      desc: newComplaintDesc,
-      resolution: 'Ticket #TCK-' + Math.floor(1000 + Math.random() * 9000) + ' created. Our support team will respond within 2 hours.'
+      target: newComplaintTarget || 'Unknown',
+      status: 'Under Review',
+      date: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+      desc: finalDesc,
+      userId: currentUserId
     };
 
-    setComplaintsData([newTicket, ...complaintsData]);
+    const res = await OfferMatrixAPI.createComplaint(payload);
+    const createdComplaint = res?.complaint || res;
+
+    const catName = newComplaintCategory === 'ride' ? 'ride'
+      : newComplaintCategory === 'skincare' ? 'skincare'
+      : newComplaintCategory === 'viral' ? 'viral raid'
+      : newComplaintCategory === 'promo' ? 'promo'
+      : 'food';
+
+    const catTitle = newComplaintCategory === 'ride' ? '🚗 Ride Complaint Filed'
+      : newComplaintCategory === 'skincare' ? '💧 Skincare Complaint Filed'
+      : newComplaintCategory === 'viral' ? '🔥 Viral Raid Complaint Filed'
+      : newComplaintCategory === 'promo' ? '🎟️ Promo Complaint Filed'
+      : '🚨 Food Complaint Filed';
+
+    if (res && res.notification) {
+      setDbNotifications(prev => [res.notification, ...prev]);
+    } else {
+      const notifItem = {
+        id: `notif-${Date.now()}`,
+        title: catTitle,
+        message: `A file of ${catName} complaint you filed`,
+        type: newComplaintCategory === 'food' || newComplaintCategory === 'viral' ? 'food' : newComplaintCategory === 'ride' ? 'ride' : newComplaintCategory === 'skincare' ? 'skincare' : 'system',
+        isRead: false,
+        createdAt: new Date().toISOString()
+      };
+      setDbNotifications(prev => [notifItem, ...prev]);
+    }
+
+    const badgeText = newComplaintCategory === 'food' ? '🍽️ FOOD SAFETY'
+      : newComplaintCategory === 'viral' ? '🔥 VIRAL RAID REPORT'
+      : newComplaintCategory === 'ride' ? '🚗 RIDE MISCONDUCT'
+      : newComplaintCategory === 'skincare' ? '💧 SKINCARE FRAUD'
+      : '⚙️ GENERAL ISSUE';
+
+    const badgeCol = newComplaintCategory === 'food' ? '#f97316'
+      : newComplaintCategory === 'viral' ? '#ef4444'
+      : newComplaintCategory === 'ride' ? '#3b82f6'
+      : newComplaintCategory === 'skincare' ? '#ec4899'
+      : '#eab308';
+
+    const newTicket = {
+      id: createdComplaint.id || `cmp-${Date.now()}`,
+      title: createdComplaint.title || finalTitle,
+      category: newComplaintCategory,
+      target: newComplaintTarget || 'Unknown',
+      badge: badgeText,
+      badgeColor: badgeCol,
+      status: 'Under Review',
+      statusClass: 'badge-status-blue-review',
+      date: 'Just now',
+      desc: createdComplaint.details || finalDesc,
+      location: newComplaintTarget || 'Online Report',
+      penalty: 'Pending Review',
+      inspector: 'OfferMatrix Community Safety Team',
+      resolution: 'Ticket #TCK-' + Math.floor(1000 + Math.random() * 9000) + ' created and saved to database. Support team responds within 2 hours.',
+      img: complainNewImg || (newComplaintCategory === 'skincare' ? 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=500&q=80' : newComplaintCategory === 'ride' ? 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=500&q=80' : 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=500&q=80'),
+      supportCount: 0,
+      discussCount: 0
+    };
+
+    setComplaintsData(prev => [newTicket, ...prev]);
     setNewComplaintDesc('');
+    setComplainNewTitle('');
+    setComplainNewImg('');
+    setNewComplaintTarget('');
     setIsFilingNewComplaint(false);
-    onToast('🎉 Complaint ticket submitted successfully! Our team is on it.');
+
+    if (onToast) onToast('🎉 Complaint ticket submitted! Notification added to bell icon 🔔');
   };
+
+  useEffect(() => {
+    const fetchDbComplaints = async () => {
+      try {
+        const dbCmps = await OfferMatrixAPI.getComplaints();
+        if (dbCmps && Array.isArray(dbCmps) && dbCmps.length > 0) {
+          const formatted = dbCmps.map(c => ({
+            id: c.id,
+            title: c.title,
+            category: c.subCategory || 'food',
+            target: c.subCategory ? `${c.subCategory.toUpperCase()} Service` : 'OfferMatrix Platform',
+            status: c.status || 'Under Review',
+            statusClass: c.status === 'Resolved' ? 'badge-status-green' : 'badge-status-blue-review',
+            date: c.date || (c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'Recently'),
+            desc: c.details || c.title,
+            resolution: 'Recorded in database. Support team responds within 2 hours.',
+            userName: c.user?.name || 'Anonymous User'
+          }));
+          setComplaintsData(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const newItems = formatted.filter(f => !existingIds.has(f.id));
+            return [...newItems, ...prev];
+          });
+        }
+      } catch (err) {
+        console.warn('Error fetching complaints from DB:', err);
+      }
+    };
+    fetchDbComplaints();
+  }, []);
 
   const filteredComplaints = complaintsData.filter(cmp => {
     const matchesCat = complainCategoryFilter === 'all' ? true : cmp.category === complainCategoryFilter;
@@ -6421,52 +6520,114 @@ export default function UserDashboard({
               {isFilingNewComplaint && (
                 <div className="complain-form-card animate-fade-in">
                   <h3 style={{ fontSize: '16px', fontWeight: 900, color: '#0f172a', marginBottom: '16px' }}>📝 File New Complaint</h3>
-                  <form onSubmit={(e) => {
+                  <form onSubmit={async (e) => {
                     e.preventDefault();
-                    if (!newComplaintDesc.trim() || !newComplaintTitle.trim()) return;
-                    const newTicket = {
-                      id: `cmp-${Date.now()}`,
-                      title: newComplaintTitle,
+                    const finalDesc = (newComplaintDesc || '').trim();
+                    if (!finalDesc) {
+                      if (onToast) onToast('⚠️ Please enter problem description before submitting');
+                      return;
+                    }
+
+                    const finalTitle = (complainNewTitle || '').trim() || (newComplaintTarget ? `Complaint re: ${newComplaintTarget}` : `Report Issue (${newComplaintCategory.toUpperCase()})`);
+
+                    const payload = {
+                      title: finalTitle,
                       category: newComplaintCategory,
                       target: newComplaintTarget || 'Unknown',
-                      badge: newComplaintCategory === 'food' ? '🍽️ FOOD SAFETY' : newComplaintCategory === 'ride' ? '🚗 RIDE ISSUE' : newComplaintCategory === 'skincare' ? '💧 SKINCARE FRAUD' : '⚙️ GENERAL ISSUE',
-                      badgeColor: newComplaintCategory === 'food' ? '#f97316' : newComplaintCategory === 'ride' ? '#3b82f6' : newComplaintCategory === 'skincare' ? '#ec4899' : '#eab308',
+                      status: 'Under Review',
+                      date: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+                      desc: finalDesc,
+                      userId: currentUserId
+                    };
+
+                    const res = await OfferMatrixAPI.createComplaint(payload);
+                    const createdComplaint = res?.complaint || res;
+
+                    const catName = newComplaintCategory === 'ride' ? 'ride'
+                      : newComplaintCategory === 'skincare' ? 'skincare'
+                      : newComplaintCategory === 'viral' ? 'viral raid'
+                      : newComplaintCategory === 'promo' ? 'promo'
+                      : 'food';
+
+                    const catTitle = newComplaintCategory === 'ride' ? '🚗 Ride Complaint Filed'
+                      : newComplaintCategory === 'skincare' ? '💧 Skincare Complaint Filed'
+                      : newComplaintCategory === 'viral' ? '🔥 Viral Raid Complaint Filed'
+                      : newComplaintCategory === 'promo' ? '🎟️ Promo Complaint Filed'
+                      : '🚨 Food Complaint Filed';
+
+                    if (res && res.notification) {
+                      setDbNotifications(prev => [res.notification, ...prev]);
+                    } else {
+                      const notifItem = {
+                        id: `notif-${Date.now()}`,
+                        title: catTitle,
+                        message: `A file of ${catName} complaint you filed`,
+                        type: newComplaintCategory === 'food' || newComplaintCategory === 'viral' ? 'food' : newComplaintCategory === 'ride' ? 'ride' : newComplaintCategory === 'skincare' ? 'skincare' : 'system',
+                        isRead: false,
+                        createdAt: new Date().toISOString()
+                      };
+                      setDbNotifications(prev => [notifItem, ...prev]);
+                    }
+
+                    const badgeText = newComplaintCategory === 'food' ? '🍽️ FOOD SAFETY'
+                      : newComplaintCategory === 'viral' ? '🔥 VIRAL RAID REPORT'
+                      : newComplaintCategory === 'ride' ? '🚗 RIDE MISCONDUCT'
+                      : newComplaintCategory === 'skincare' ? '💧 SKINCARE FRAUD'
+                      : '⚙️ GENERAL ISSUE';
+
+                    const badgeCol = newComplaintCategory === 'food' ? '#f97316'
+                      : newComplaintCategory === 'viral' ? '#ef4444'
+                      : newComplaintCategory === 'ride' ? '#3b82f6'
+                      : newComplaintCategory === 'skincare' ? '#ec4899'
+                      : '#eab308';
+
+                    const newTicket = {
+                      id: createdComplaint.id || `cmp-${Date.now()}`,
+                      title: createdComplaint.title || finalTitle,
+                      category: newComplaintCategory,
+                      target: newComplaintTarget || 'Unknown',
+                      badge: badgeText,
+                      badgeColor: badgeCol,
                       status: 'Under Review',
                       statusClass: 'badge-status-blue-review',
                       date: 'Just now',
-                      desc: newComplaintDesc,
-                      location: newComplaintTarget,
-                      penalty: 'Pending',
-                      inspector: 'OfferMatrix Community Team',
-                      resolution: 'Ticket #TCK-' + Math.floor(1000 + Math.random() * 9000) + ' created. Our team responds within 2 hours.',
-                      img: complainNewImg || 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=500&q=80',
+                      desc: createdComplaint.details || finalDesc,
+                      location: newComplaintTarget || 'Online Report',
+                      penalty: 'Pending Review',
+                      inspector: 'OfferMatrix Community Safety Team',
+                      resolution: 'Ticket #TCK-' + Math.floor(1000 + Math.random() * 9000) + ' created and saved to database. Support team responds within 2 hours.',
+                      img: complainNewImg || (newComplaintCategory === 'skincare' ? 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=500&q=80' : newComplaintCategory === 'ride' ? 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=500&q=80' : 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=500&q=80'),
                       supportCount: 0,
                       discussCount: 0
                     };
-                    setComplaintsData([newTicket, ...complaintsData]);
+
+                    setComplaintsData(prev => [newTicket, ...prev]);
                     setNewComplaintDesc('');
                     setComplainNewTitle('');
                     setComplainNewImg('');
+                    setNewComplaintTarget('');
                     setIsFilingNewComplaint(false);
-                    onToast('🎉 Complaint submitted! Our safety team is on it.');
+
+                    if (onToast) onToast('🎉 Complaint ticket submitted! Notification added to bell icon 🔔');
                   }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                       <div className="form-field-group">
                         <label className="form-field-label">COMPLAINT TITLE</label>
-                        <input type="text" className="form-input-text" placeholder="e.g. Stale food served at restaurant..." value={complainNewTitle} onChange={e => setComplainNewTitle(e.target.value)} required />
+                        <input type="text" className="form-input-text" placeholder="e.g. Stale food served at restaurant..." value={complainNewTitle} onChange={e => setComplainNewTitle(e.target.value)} />
                       </div>
                       <div className="form-field-group">
                         <label className="form-field-label">ISSUE CATEGORY</label>
                         <select className="form-select-box" value={newComplaintCategory} onChange={(e) => setNewComplaintCategory(e.target.value)}>
                           <option value="food">🍽️ Food Safety</option>
-                          <option value="ride">🚗 Ride Misconduct</option>
-                          <option value="skincare">💧 Skincare Fraud</option>
+                          <option value="viral">🔥 Viral Restaurant Raid Report</option>
+                          <option value="ride">🚗 Ride Misconduct / Driver Complaint</option>
+                          <option value="skincare">💧 Skincare Fraud / Counterfeit Page</option>
                           <option value="app">⚙️ General / App Issue</option>
                         </select>
                       </div>
                       <div className="form-field-group">
                         <label className="form-field-label">STORE / APP / DRIVER NAME</label>
-                        <input type="text" className="form-input-text" placeholder="e.g. foodpanda, Uber, Kacchi Bhai..." value={newComplaintTarget} onChange={(e) => setNewComplaintTarget(e.target.value)} required />
+                        <input type="text" className="form-input-text" placeholder="e.g. foodpanda, Uber, Kacchi Bhai..." value={newComplaintTarget} onChange={(e) => setNewComplaintTarget(e.target.value)} />
                       </div>
                       <div className="form-field-group">
                         <label className="form-field-label">IMAGE URL (Optional)</label>
@@ -6475,11 +6636,11 @@ export default function UserDashboard({
                     </div>
                     <div className="form-field-group" style={{ marginBottom: '16px' }}>
                       <label className="form-field-label">PROBLEM DESCRIPTION</label>
-                      <textarea rows={3} className="form-textarea" placeholder="Describe what happened in detail..." value={newComplaintDesc} onChange={(e) => setNewComplaintDesc(e.target.value)} required />
+                      <textarea rows={3} className="form-textarea" placeholder="Describe what happened in detail..." value={newComplaintDesc} onChange={(e) => setNewComplaintDesc(e.target.value)} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                       <button type="button" className="btn-cancel-modal" onClick={() => setIsFilingNewComplaint(false)}>Cancel</button>
-                      <button type="submit" className="btn-file-complaint-main">Submit Ticket 🚀</button>
+                      <button type="submit" className="btn-file-complaint-main" style={{ cursor: 'pointer' }}>Submit</button>
                     </div>
                   </form>
                 </div>
@@ -7678,7 +7839,7 @@ export default function UserDashboard({
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                     <button type="button" className="btn-cancel-modal" onClick={() => setIsFilingNewComplaint(false)}>Cancel</button>
-                    <button type="submit" className="btn-confirm-ride-booking" style={{ background: '#ff2b70' }}>Submit Ticket 🚀</button>
+                    <button type="submit" className="btn-confirm-ride-booking" style={{ background: '#ff2b70', cursor: 'pointer' }}>Submit</button>
                   </div>
                 </form>
               )}
