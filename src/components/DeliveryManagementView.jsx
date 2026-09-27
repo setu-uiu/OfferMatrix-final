@@ -18,6 +18,7 @@ import {
   Navigation, Send, Copy, CreditCard, UserPlus
 } from 'lucide-react';
 import { assignRiderToOrder, fetchDeliveryPartners } from '../services/deliveryApi';
+import { OfferMatrixAPI } from '../services/api';
 
 export default function DeliveryManagementView({ onBack, onLogout, onToast, initialTab = 'Delivery Partners' }) {
   const [activeSidebarItem, setActiveSidebarItem] = useState(initialTab || 'Delivery Partners');
@@ -28,6 +29,27 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
   const [selectedPartnerId, setSelectedPartnerId] = useState('dp-1');
   const [partnerSearchQuery, setPartnerSearchQuery] = useState('');
 
+  // Live Orders State from PostgreSQL
+  const [liveOrders, setLiveOrders] = useState([]);
+  const [selectedOrderIdx, setSelectedOrderIdx] = useState(0);
+
+  const fetchLiveOrdersFromDb = async () => {
+    try {
+      const res = await OfferMatrixAPI.getOrders();
+      if (res && res.success && Array.isArray(res.orders) && res.orders.length > 0) {
+        setLiveOrders(res.orders);
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not fetch live orders from backend:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveOrdersFromDb();
+    const interval = setInterval(fetchLiveOrdersFromDb, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Quick action toast helper
   const handleAction = (actionName) => {
     if (onToast) onToast(`${actionName} action triggered`);
@@ -36,7 +58,9 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
   // Perform backend PostgreSQL rider assignment transaction
   const handleAssignRiderInView = async (partner) => {
     const targetPartner = partner || selectedPartner;
-    const orderId = 'OM-20250922-0012';
+    const activeOrder = liveOrders[selectedOrderIdx] || liveOrders[0];
+    const orderId = activeOrder?.id || activeOrder?.orderNumber || 'OM-20250922-0012';
+    const orderType = activeOrder?.category || (activeOrder?.orderNumber?.startsWith('SKIN-') ? 'skincare' : 'food');
 
     if (targetPartner.statusType === 'suspended' || targetPartner.isSuspended) {
       if (onToast) onToast(`❌ Cannot assign rider ${targetPartner.name}: Rider is currently suspended.`);
@@ -52,11 +76,13 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
     const res = await assignRiderToOrder({
       orderId,
       deliveryPartnerId: targetPartner.id || 'dp-1',
-      orderType: 'food'
+      orderType
     });
 
     if (res.success || res.data) {
-      if (onToast) onToast(`✅ Rider ${targetPartner.name} assigned to Order #${orderId}! Saved in PostgreSQL with audit log.`);
+      const numToDisplay = activeOrder?.orderNumber || orderId;
+      if (onToast) onToast(`✅ Rider ${targetPartner.name} assigned to Order #${numToDisplay}! Saved in PostgreSQL with persistent notification.`);
+      fetchLiveOrdersFromDb();
     } else {
       if (onToast) onToast(`⚠️ ${res.error || 'Failed to assign rider'}`);
     }
@@ -919,21 +945,49 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
                         Order Details
                       </h3>
                       <span style={{ background: '#ecfdf5', color: '#10b981', padding: '2px 8px', borderRadius: '99px', fontSize: '10.5px', fontWeight: 800 }}>
-                        • Ready to Assign
+                        {liveOrders[selectedOrderIdx]?.deliveryPartner ? `• Rider: ${liveOrders[selectedOrderIdx].deliveryPartner.name}` : '• Ready to Assign'}
                       </span>
                     </div>
-                    <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600, marginBottom: '14px' }}>
-                      #OM-20250922-0012
-                    </div>
+
+                    {liveOrders.length > 1 ? (
+                      <select
+                        value={selectedOrderIdx}
+                        onChange={(e) => setSelectedOrderIdx(Number(e.target.value))}
+                        style={{
+                          width: '100%',
+                          fontSize: '11.5px',
+                          fontWeight: 700,
+                          padding: '4px 8px',
+                          borderRadius: '8px',
+                          border: '1px solid #ff2b70',
+                          color: '#ff2b70',
+                          background: '#fff0f5',
+                          outline: 'none',
+                          marginBottom: '10px'
+                        }}
+                      >
+                        {liveOrders.map((ord, idx) => (
+                          <option key={ord.id || idx} value={idx}>
+                            #{ord.orderNumber} ({ord.category === 'skincare' ? 'Skincare' : 'Food'}) - ৳{ord.totalAmount}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600, marginBottom: '14px' }}>
+                        #{liveOrders[0]?.orderNumber || 'OM-20250922-0012'}
+                      </div>
+                    )}
 
                     {/* Merchant Block */}
                     <div style={{ background: '#f8fafc', border: '1px solid #f1f5f9', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#e11d48', color: '#fff', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>
-                          KFC
+                          {liveOrders[selectedOrderIdx]?.storePlatform ? 'STORE' : 'FOOD'}
                         </div>
                         <div>
-                          <div style={{ fontSize: '12.5px', fontWeight: 900, color: '#0f172a' }}>KFC - Gulshan 1</div>
+                          <div style={{ fontSize: '12.5px', fontWeight: 900, color: '#0f172a' }}>
+                            {liveOrders[selectedOrderIdx]?.merchantName || (liveOrders[selectedOrderIdx]?.storePlatform ? liveOrders[selectedOrderIdx].storePlatform.replace(/_/g, ' ').toUpperCase() : 'KFC - Gulshan 1')}
+                          </div>
                           <div style={{ fontSize: '10.5px', color: '#64748b' }}>Road 5, Gulshan 1, Dhaka</div>
                         </div>
                       </div>
@@ -944,37 +998,48 @@ export default function DeliveryManagementView({ onBack, onLogout, onToast, init
 
                     {/* Order Items Breakdown */}
                     <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '10px', marginBottom: '10px', fontSize: '11.5px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#475569', fontWeight: 600 }}>1 × Zinger Burger</span>
-                        <span style={{ fontWeight: 800, color: '#0f172a' }}>৳ 350</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#475569', fontWeight: 600 }}>1 × French Fries</span>
-                        <span style={{ fontWeight: 800, color: '#0f172a' }}>৳ 120</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#475569', fontWeight: 600 }}>1 × Coke (500ml)</span>
-                        <span style={{ fontWeight: 800, color: '#0f172a' }}>৳ 80</span>
-                      </div>
+                      {liveOrders[selectedOrderIdx]?.items && liveOrders[selectedOrderIdx].items.length > 0 ? (
+                        liveOrders[selectedOrderIdx].items.map((it, idx) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#475569', fontWeight: 600 }}>{it.quantity} × {it.name}</span>
+                            <span style={{ fontWeight: 800, color: '#0f172a' }}>৳ {Number(it.unitPrice * (it.quantity || 1)).toLocaleString()}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#475569', fontWeight: 600 }}>1 × Zinger Burger</span>
+                            <span style={{ fontWeight: 800, color: '#0f172a' }}>৳ 350</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#475569', fontWeight: 600 }}>1 × French Fries</span>
+                            <span style={{ fontWeight: 800, color: '#0f172a' }}>৳ 120</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#475569', fontWeight: 600 }}>1 × Coke (500ml)</span>
+                            <span style={{ fontWeight: 800, color: '#0f172a' }}>৳ 80</span>
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     {/* Subtotal, Fee, Total */}
                     <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '10px', marginBottom: '14px', fontSize: '11.5px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ color: '#64748b' }}>Subtotal</span>
-                        <span style={{ fontWeight: 800, color: '#0f172a' }}>৳ 550</span>
+                        <span style={{ fontWeight: 800, color: '#0f172a' }}>৳ {Number(liveOrders[selectedOrderIdx]?.subtotal || liveOrders[selectedOrderIdx]?.totalAmount || 550).toLocaleString()}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ color: '#64748b' }}>Delivery Fee</span>
-                        <span style={{ fontWeight: 800, color: '#0f172a' }}>৳ 50</span>
+                        <span style={{ fontWeight: 800, color: '#0f172a' }}>৳ {Number(liveOrders[selectedOrderIdx]?.deliveryFee || 50).toLocaleString()}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ color: '#64748b' }}>Discount</span>
-                        <span style={{ fontWeight: 800, color: '#10b981' }}>- ৳ 80</span>
+                        <span style={{ fontWeight: 800, color: '#10b981' }}>- ৳ {Number(liveOrders[selectedOrderIdx]?.discount || 0).toLocaleString()}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
                         <span style={{ fontSize: '13px', fontWeight: 900, color: '#0f172a' }}>Total</span>
-                        <span style={{ fontSize: '18px', fontWeight: 900, color: '#ff2b70' }}>৳ 520</span>
+                        <span style={{ fontSize: '18px', fontWeight: 900, color: '#ff2b70' }}>৳ {Number(liveOrders[selectedOrderIdx]?.totalAmount || 520).toLocaleString()}</span>
                       </div>
                     </div>
 

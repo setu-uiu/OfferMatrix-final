@@ -85,6 +85,31 @@ export default function UserDashboard({
     }
   };
 
+  const handleNotificationItemClick = async (n) => {
+    if (!n.isRead) {
+      handleToggleRead(n.id, false);
+    }
+    setIsNotifDropdownOpen(false);
+
+    if (n.orderId) {
+      const matchedOrder = userOrders.find(o => o.id === n.orderId || o.orderNumber === n.orderId || (o.items && o.items.some(it => it.orderId === n.orderId)));
+      if (matchedOrder) {
+        setSelectedOrder(matchedOrder);
+        setActiveTab('orders');
+        if (onToast) onToast(`Opened tracking for order #${matchedOrder.orderNumber || matchedOrder.id}`);
+        return;
+      }
+    }
+
+    if (n.title?.includes('Complaint') || n.message?.includes('complaint')) {
+      setActiveTab('complain_issues');
+      if (onToast) onToast('Opened Community Safety Center');
+      return;
+    }
+
+    setActiveTab('orders');
+  };
+
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab);
@@ -2476,7 +2501,7 @@ export default function UserDashboard({
                     activeNotifications.map(n => (
                       <div
                         key={n.id}
-                        onClick={() => handleToggleRead(n.id, n.isRead)}
+                        onClick={() => handleNotificationItemClick(n)}
                         style={{
                           padding: '12px',
                           borderRadius: '12px',
