@@ -52,7 +52,7 @@ export default function UserDashboard({
       if (notifs && Array.isArray(notifs)) {
         setDbNotifications(notifs);
       }
-    } catch (err) {}
+    } catch (err) { }
   };
 
   useEffect(() => {
@@ -520,77 +520,82 @@ export default function UserDashboard({
     onToast('🎉 Review published! ৳20 reward credited to your Setu Pay wallet.');
   };
 
-  // Interactive Live Chat System State
+  // Interactive Live Chat System State (Persistent PostgreSQL)
   const [isLiveChatOpen, setIsLiveChatOpen] = useState(false);
   const [chatInputValue, setChatInputValue] = useState('');
   const [isAgentTyping, setIsAgentTyping] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: 'm1',
-      sender: 'agent',
-      name: 'Nusrat Jahan (Setu Officer)',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
-      text: '👋 Hello Sadman! Welcome to OfferMatrix 24/7 Live Support.',
-      time: '10:02 AM'
-    },
-    {
-      id: 'm2',
-      sender: 'agent',
-      name: 'Nusrat Jahan (Setu Officer)',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
-      text: 'I am here to assist with Food Coupons 🍔, Ride Fare Disputes 🚗, Skincare Authenticity ✨, or Wallet Cashback 💳. How can I help you today?',
-      time: '10:03 AM'
+  const [activeConvId, setActiveConvId] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const fetchUserChatConversation = async () => {
+    try {
+      const res = await OfferMatrixAPI.getConversations({ userId: currentUserId, role: 'USER' });
+      if (res && res.success && Array.isArray(res.conversations) && res.conversations.length > 0) {
+        const conv = res.conversations[0];
+        setActiveConvId(conv.id);
+        if (Array.isArray(conv.messages) && conv.messages.length > 0) {
+          setChatMessages(conv.messages.map(m => ({
+            id: m.id,
+            sender: m.senderRole === 'ADMIN' ? 'agent' : 'user',
+            name: m.senderRole === 'ADMIN' ? (m.senderName || 'Nusrat Jahan (Setu Officer)') : `You (${userName})`,
+            avatar: m.senderRole === 'ADMIN'
+              ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80'
+              : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+            text: m.message,
+            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          })));
+        }
+      } else {
+        // Initialize persistent conversation in PostgreSQL
+        const createRes = await OfferMatrixAPI.createConversation({
+          userId: currentUserId,
+          senderName: userName,
+          initialMessage: '👋 Hello! I am looking for support on OfferMatrix 24/7 Live Support.'
+        });
+        if (createRes && createRes.success && createRes.conversation) {
+          setActiveConvId(createRes.conversation.id);
+          fetchUserChatConversation();
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not fetch persistent chat conversation:', err);
     }
-  ]);
+  };
 
-  const handleSendChatMessage = (textToSend) => {
+  useEffect(() => {
+    fetchUserChatConversation();
+    const interval = setInterval(() => {
+      if (isLiveChatOpen) fetchUserChatConversation();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isLiveChatOpen, currentUserId]);
+
+  const handleSendChatMessage = async (textToSend) => {
     const messageText = typeof textToSend === 'string' ? textToSend : chatInputValue;
     if (!messageText || !messageText.trim()) return;
 
-    const userMsg = {
-      id: `msg-${Date.now()}`,
-      sender: 'user',
-      name: 'You (Sadman)',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
-      text: messageText.trim(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setChatMessages(prev => [...prev, userMsg]);
     setChatInputValue('');
-    setIsAgentTyping(true);
 
-    setTimeout(() => {
-      let replyText = `Thanks for reaching out! Our support team is checking your details regarding: "${messageText.trim()}". An officer will assist you right away.`;
-      const lower = messageText.toLowerCase();
-
-      if (lower.includes('cashback') || lower.includes('wallet') || lower.includes('balance') || lower.includes('money') || lower.includes('refund')) {
-        replyText = `💳 Your Setu Pay balance is ৳1,850. Cashback from verified food orders & rides is credited automatically within 10 minutes!`;
-      } else if (lower.includes('coupon') || lower.includes('code') || lower.includes('discount') || lower.includes('promo')) {
-        replyText = `🎟️ Active code today: Use "FOODPAD100" for ৳100 OFF food orders above ৳500, or "UBERFREE" for intercity toll exemption!`;
-      } else if (lower.includes('raid') || lower.includes('complain') || lower.includes('magistrate') || lower.includes('hygiene') || lower.includes('food')) {
-        replyText = `⚖️ Executive Magistrate mobile court raids are updated under 'Complain & Issues'. Sultan's Kacchi (Dhanmondi) & Kacchi Bhai have official compliance reports!`;
-      } else if (lower.includes('ride') || lower.includes('pathao') || lower.includes('uber') || lower.includes('indrive') || lower.includes('fare')) {
-        replyText = `🚗 InDrive fare bidding is currently 18% lower than Uber for Dhanmondi–Gulshan routes today. Check our live fare comparison calculator!`;
-      } else if (lower.includes('skincare') || lower.includes('authentic') || lower.includes('cerave') || lower.includes('cosrx')) {
-        replyText = `✨ All skincare products listed on OfferMatrix (CeraVe, COSRX, The Ordinary) undergo barcode authenticity verification with Choice Legacy BD!`;
-      } else if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
-        replyText = `👋 Hello! I am online and active right now. Please select or type what you need help with: Food, Rides, Skincare, or Wallet Refund!`;
+    let convId = activeConvId;
+    if (!convId) {
+      const convRes = await OfferMatrixAPI.createConversation({
+        userId: currentUserId,
+        senderName: userName
+      });
+      if (convRes && convRes.conversation) {
+        convId = convRes.conversation.id;
+        setActiveConvId(convId);
       }
+    }
 
-      const agentMsg = {
-        id: `msg-agent-${Date.now()}`,
-        sender: 'agent',
-        name: 'Nusrat Jahan (Setu Officer)',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
-        text: replyText,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-
-      setChatMessages(prev => [...prev, agentMsg]);
-      setIsAgentTyping(false);
-      onToast('💬 New message from Nusrat Jahan (Support Officer)');
-    }, 1000);
+    if (convId) {
+      await OfferMatrixAPI.sendChatMessage(convId, {
+        senderId: currentUserId,
+        senderName: userName,
+        senderRole: 'USER',
+        message: messageText.trim()
+      });
+      fetchUserChatConversation();
+    }
   };
 
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
@@ -1063,15 +1068,15 @@ export default function UserDashboard({
 
     const catName = newComplaintCategory === 'ride' ? 'ride'
       : newComplaintCategory === 'skincare' ? 'skincare'
-      : newComplaintCategory === 'viral' ? 'viral raid'
-      : newComplaintCategory === 'promo' ? 'promo'
-      : 'food';
+        : newComplaintCategory === 'viral' ? 'viral raid'
+          : newComplaintCategory === 'promo' ? 'promo'
+            : 'food';
 
     const catTitle = newComplaintCategory === 'ride' ? '🚗 Ride Complaint Filed'
       : newComplaintCategory === 'skincare' ? '💧 Skincare Complaint Filed'
-      : newComplaintCategory === 'viral' ? '🔥 Viral Raid Complaint Filed'
-      : newComplaintCategory === 'promo' ? '🎟️ Promo Complaint Filed'
-      : '🚨 Food Complaint Filed';
+        : newComplaintCategory === 'viral' ? '🔥 Viral Raid Complaint Filed'
+          : newComplaintCategory === 'promo' ? '🎟️ Promo Complaint Filed'
+            : '🚨 Food Complaint Filed';
 
     if (res && res.notification) {
       setDbNotifications(prev => [res.notification, ...prev]);
@@ -1089,15 +1094,15 @@ export default function UserDashboard({
 
     const badgeText = newComplaintCategory === 'food' ? '🍽️ FOOD SAFETY'
       : newComplaintCategory === 'viral' ? '🔥 VIRAL RAID REPORT'
-      : newComplaintCategory === 'ride' ? '🚗 RIDE MISCONDUCT'
-      : newComplaintCategory === 'skincare' ? '💧 SKINCARE FRAUD'
-      : '⚙️ GENERAL ISSUE';
+        : newComplaintCategory === 'ride' ? '🚗 RIDE MISCONDUCT'
+          : newComplaintCategory === 'skincare' ? '💧 SKINCARE FRAUD'
+            : '⚙️ GENERAL ISSUE';
 
     const badgeCol = newComplaintCategory === 'food' ? '#f97316'
       : newComplaintCategory === 'viral' ? '#ef4444'
-      : newComplaintCategory === 'ride' ? '#3b82f6'
-      : newComplaintCategory === 'skincare' ? '#ec4899'
-      : '#eab308';
+        : newComplaintCategory === 'ride' ? '#3b82f6'
+          : newComplaintCategory === 'skincare' ? '#ec4899'
+            : '#eab308';
 
     const newTicket = {
       id: createdComplaint.id || `cmp-${Date.now()}`,
@@ -1918,7 +1923,7 @@ export default function UserDashboard({
     };
 
     const token = localStorage.getItem('offermatrix_token');
-    let tripNumber = `RIDE-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(1000 + Math.random() * 9000)}`;
+    let tripNumber = `RIDE-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     if (token) {
       try {
@@ -2015,12 +2020,12 @@ export default function UserDashboard({
 
     let statusText = rawSt === 'PENDING' ? (isRiderAssigned ? 'Rider Assigned' : 'Waiting for rider')
       : rawSt === 'CONFIRMED' ? (isRiderAssigned ? 'Rider Assigned' : 'Waiting for rider')
-      : rawSt === 'PROCESSING' ? (isRiderAssigned ? 'Rider Assigned' : 'Waiting for rider')
-      : rawSt === 'PREPARING' ? (isRiderAssigned ? 'Rider Assigned' : 'Waiting for rider')
-      : (rawSt === 'ON_THE_WAY' || rawSt === 'SHIPPED') ? 'On the way'
-      : (rawSt === 'DELIVERED' || rawSt === 'COMPLETED') ? 'Delivered'
-      : rawSt === 'CANCELLED' ? 'Cancelled'
-      : order.status || rawSt;
+        : rawSt === 'PROCESSING' ? (isRiderAssigned ? 'Rider Assigned' : 'Waiting for rider')
+          : rawSt === 'PREPARING' ? (isRiderAssigned ? 'Rider Assigned' : 'Waiting for rider')
+            : (rawSt === 'ON_THE_WAY' || rawSt === 'SHIPPED') ? 'On the way'
+              : (rawSt === 'DELIVERED' || rawSt === 'COMPLETED') ? 'Delivered'
+                : rawSt === 'CANCELLED' ? 'Cancelled'
+                  : order.status || rawSt;
 
     if (isRiderAssigned && rawSt !== 'DELIVERED' && rawSt !== 'COMPLETED' && rawSt !== 'CANCELLED') {
       statusText = 'Rider Assigned';
@@ -2438,8 +2443,8 @@ export default function UserDashboard({
 
         <div className="dashboard-top-right">
           <div style={{ position: 'relative' }}>
-            <button 
-              className="dash-icon-btn" 
+            <button
+              className="dash-icon-btn"
               title="Notifications"
               onClick={() => setIsNotifDropdownOpen(!isNotifDropdownOpen)}
               style={{ position: 'relative' }}
@@ -6570,15 +6575,15 @@ export default function UserDashboard({
 
                     const catName = newComplaintCategory === 'ride' ? 'ride'
                       : newComplaintCategory === 'skincare' ? 'skincare'
-                      : newComplaintCategory === 'viral' ? 'viral raid'
-                      : newComplaintCategory === 'promo' ? 'promo'
-                      : 'food';
+                        : newComplaintCategory === 'viral' ? 'viral raid'
+                          : newComplaintCategory === 'promo' ? 'promo'
+                            : 'food';
 
                     const catTitle = newComplaintCategory === 'ride' ? '🚗 Ride Complaint Filed'
                       : newComplaintCategory === 'skincare' ? '💧 Skincare Complaint Filed'
-                      : newComplaintCategory === 'viral' ? '🔥 Viral Raid Complaint Filed'
-                      : newComplaintCategory === 'promo' ? '🎟️ Promo Complaint Filed'
-                      : '🚨 Food Complaint Filed';
+                        : newComplaintCategory === 'viral' ? '🔥 Viral Raid Complaint Filed'
+                          : newComplaintCategory === 'promo' ? '🎟️ Promo Complaint Filed'
+                            : '🚨 Food Complaint Filed';
 
                     if (res && res.notification) {
                       setDbNotifications(prev => [res.notification, ...prev]);
@@ -6596,15 +6601,15 @@ export default function UserDashboard({
 
                     const badgeText = newComplaintCategory === 'food' ? '🍽️ FOOD SAFETY'
                       : newComplaintCategory === 'viral' ? '🔥 VIRAL RAID REPORT'
-                      : newComplaintCategory === 'ride' ? '🚗 RIDE MISCONDUCT'
-                      : newComplaintCategory === 'skincare' ? '💧 SKINCARE FRAUD'
-                      : '⚙️ GENERAL ISSUE';
+                        : newComplaintCategory === 'ride' ? '🚗 RIDE MISCONDUCT'
+                          : newComplaintCategory === 'skincare' ? '💧 SKINCARE FRAUD'
+                            : '⚙️ GENERAL ISSUE';
 
                     const badgeCol = newComplaintCategory === 'food' ? '#f97316'
                       : newComplaintCategory === 'viral' ? '#ef4444'
-                      : newComplaintCategory === 'ride' ? '#3b82f6'
-                      : newComplaintCategory === 'skincare' ? '#ec4899'
-                      : '#eab308';
+                        : newComplaintCategory === 'ride' ? '#3b82f6'
+                          : newComplaintCategory === 'skincare' ? '#ec4899'
+                            : '#eab308';
 
                     const newTicket = {
                       id: createdComplaint.id || `cmp-${Date.now()}`,
@@ -8408,22 +8413,15 @@ export default function UserDashboard({
         </div>
       )}
 
-      {/* Floating Live Chat Trigger Button */}
+      {/* Floating Live Chat Trigger Button (Admin Support Messaging) */}
       {!isLiveChatOpen && (
         <button
+          type="button"
           className="floating-live-chat-btn animate-fade-in"
-          onClick={() => {
-            if (activeTab === 'food' || orderCategoryFilter === 'food') {
-              setActiveDeliverymanChat({
-                name: 'Rahim Ahmed (Delivery Rider)',
-                phone: '+880 1712 345678',
-                vehicle: 'Honda Dream 110 (Motorcycle)',
-                avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-                orderId: 'ORD-98421-FD'
-              });
-            } else {
-              setIsLiveChatOpen(true);
-            }
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsLiveChatOpen(true);
           }}
           style={{
             position: 'fixed',
@@ -8462,8 +8460,8 @@ export default function UserDashboard({
             position: 'fixed',
             bottom: '24px',
             right: '24px',
-            width: '380px',
-            height: '540px',
+            width: '360px',
+            height: '500px',
             maxHeight: '90vh',
             maxWidth: '92vw',
             background: '#ffffff',
@@ -8481,7 +8479,7 @@ export default function UserDashboard({
             style={{
               background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
               color: '#ffffff',
-              padding: '16px 20px',
+              padding: '14px 18px',
               display: 'flex',
               alignItems: 'center',
               justify: 'space-between',
@@ -8493,19 +8491,24 @@ export default function UserDashboard({
                 <img
                   src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80"
                   alt="Nusrat Jahan"
-                  style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #38bdf8' }}
+                  style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #38bdf8' }}
                 />
-                <span style={{ position: 'absolute', bottom: '0', right: '0', width: '12px', height: '12px', background: '#22c55e', borderRadius: '50%', border: '2px solid #0f172a' }} />
+                <span style={{ position: 'absolute', bottom: '0', right: '0', width: '10px', height: '10px', background: '#22c55e', borderRadius: '50%', border: '2px solid #0f172a' }} />
               </div>
               <div>
-                <strong style={{ fontSize: '15px', display: 'block', color: '#ffffff', fontWeight: 800 }}>Nusrat Jahan</strong>
-                <span style={{ fontSize: '11.5px', color: '#38bdf8', fontWeight: 600 }}>🟢 Setu Senior Support Officer</span>
+                <strong style={{ fontSize: '14px', display: 'block', color: '#ffffff', fontWeight: 800 }}>Nusrat Jahan</strong>
+                <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 600 }}>🟢 Admin Support Officer</span>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
-                style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#94a3b8', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', fontWeight: 800 }}
-                onClick={() => setIsLiveChatOpen(false)}
+                type="button"
+                style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#94a3b8', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer', fontWeight: 800 }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsLiveChatOpen(false);
+                }}
               >
                 ✕
               </button>
@@ -8811,6 +8814,6 @@ export default function UserDashboard({
           </form>
         </div>
       )}
-      </div>
+    </div>
   );
 }

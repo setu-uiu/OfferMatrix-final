@@ -1,18 +1,18 @@
 import React from 'react';
 import { Heart, Bell, Percent, User, LogOut, LayoutDashboard, ShoppingBag } from 'lucide-react';
 
-export default function Navbar({ 
-  activeCategory, 
-  setActiveCategory, 
-  savedCount = 0, 
+export default function Navbar({
+  activeCategory,
+  setActiveCategory,
+  savedCount = 0,
   cartCount = 0,
   currentUser,
   onOpenSaved,
-  onOpenCart, 
+  onOpenCart,
   onOpenAuth,
   onOpenDashboard,
   onLogout,
-  onOpenFindDeal 
+  onOpenFindDeal
 }) {
   const navItems = [
     { id: 'all', label: 'Home' },
@@ -79,16 +79,16 @@ export default function Navbar({
 
           {currentUser ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button 
-                className="btn-signin" 
-                onClick={onOpenDashboard} 
+              <button
+                className="btn-signin"
+                onClick={onOpenDashboard}
                 style={{ background: '#fff0f5', color: '#ff2b70', borderColor: '#fecdd3', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
                 <LayoutDashboard size={16} />
                 <span>Dashboard</span>
               </button>
-              <button 
-                onClick={onLogout} 
+              <button
+                onClick={onLogout}
                 title="Log Out"
                 style={{ padding: '8px', borderRadius: '50%', border: '1px solid #e5e7eb', color: '#ef4444' }}
               >

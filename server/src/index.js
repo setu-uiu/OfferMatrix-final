@@ -357,7 +357,7 @@ app.post('/api/auth/login', async (req, res) => {
     if (!user) {
       console.log(`👤 User email ${normalizedEmail} not found in DB. Auto-inserting user into PostgreSQL database...`);
       const hashedPassword = await bcrypt.hash(password, 10);
-      
+
       const isDomainAdmin = normalizedEmail.includes('admin');
       const targetRoleName = isDomainAdmin ? 'ADMIN' : 'USER';
       let roleObj = await prisma.role.findUnique({ where: { name: targetRoleName } });
@@ -2581,7 +2581,7 @@ app.post('/api/orders/skincare', authenticateToken, async (req, res) => {
         name: it.name || it.title || 'Skincare Product',
         brand: it.brand || 'Choice Legacy',
         quantity: qty,
- unitPrice: uPrice.toFixed(2),
+        unitPrice: uPrice.toFixed(2),
         totalPrice: lTotal.toFixed(2),
         image: it.image || it.img || 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=120&q=80'
       };
@@ -2914,7 +2914,243 @@ app.post('/api/delivery/assign', async (req, res) => {
   }
 });
 
+// ==========================================
+// ADMIN ↔ USER PERSISTENT CHAT MESSAGING API
+// ==========================================
+
+// GET /api/chat/conversations
+app.get('/api/chat/conversations', async (req, res) => {
+  try {
+    const { userId, role, orderId } = req.query;
+    const isUser = (role || '').toUpperCase() === 'USER';
+    const isAdmin = (role || '').toUpperCase() === 'ADMIN';
+
+    let whereClause = {};
+
+    if (isUser) {
+      if (!userId) {
+        return res.status(400).json({ success: false, error: 'userId is required for user conversations' });
+      }
+      // SECURITY: User can ONLY see their own conversations
+      whereClause.userId = userId;
+    } else if (isAdmin) {
+      if (userId) whereClause.userId = userId;
+    } else if (userId) {
+      // Default: enforce userId match for privacy
+      whereClause.userId = userId;
+    }
+
+    if (orderId) {
+      whereClause.orderId = orderId;
+    }
+
+    const conversations = await prisma.conversation.findMany({
+      where: whereClause,
+      include: {
+        user: { select: { id: true, name: true, email: true, avatar: true, phone: true } },
+        admin: { select: { id: true, name: true, email: true, avatar: true } },
+        messages: {
+          orderBy: { createdAt: 'asc' }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    res.json({ success: true, count: conversations.length, conversations });
+  } catch (err) {
+    console.error('❌ Error in GET /api/chat/conversations:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/chat/conversations (Find existing or create new conversation)
+app.post('/api/chat/conversations', async (req, res) => {
+  try {
+    const { userId, adminId, orderId, initialMessage, senderName } = req.body;
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'userId is required' });
+    }
+
+    // Check if conversation already exists for this user (and order if specified)
+    let conversation = await prisma.conversation.findFirst({
+      where: {
+        userId,
+        ...(orderId ? { orderId } : {})
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true, avatar: true } },
+        messages: { orderBy: { createdAt: 'asc' } }
+      }
+    });
+
+    if (!conversation) {
+      conversation = await prisma.conversation.create({
+        data: {
+          userId,
+          adminId: adminId || null,
+          orderId: orderId || null,
+          lastMessage: initialMessage || 'Conversation started',
+          lastMessageAt: new Date()
+        },
+        include: {
+          user: { select: { id: true, name: true, email: true, avatar: true } },
+          messages: { orderBy: { createdAt: 'asc' } }
+        }
+      });
+    }
+
+    if (initialMessage) {
+      const msg = await prisma.chatMessage.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: userId,
+          senderName: senderName || conversation.user?.name || 'User',
+          senderRole: 'USER',
+          message: initialMessage
+        }
+      });
+
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: {
+          lastMessage: initialMessage,
+          lastMessageAt: new Date()
+        }
+      });
+
+      conversation = await prisma.conversation.findUnique({
+        where: { id: conversation.id },
+        include: {
+          user: { select: { id: true, name: true, email: true, avatar: true } },
+          messages: { orderBy: { createdAt: 'asc' } }
+        }
+      });
+    }
+
+    res.json({ success: true, conversation });
+  } catch (err) {
+    console.error('❌ Error in POST /api/chat/conversations:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/chat/conversations/:id (With Security Checks)
+app.get('/api/chat/conversations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, role } = req.query;
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, name: true, email: true, avatar: true } },
+        admin: { select: { id: true, name: true, email: true, avatar: true } },
+        messages: { orderBy: { createdAt: 'asc' } }
+      }
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ success: false, error: 'Conversation not found' });
+    }
+
+    // SECURITY CHECK: If requesting role is USER, verify user owns conversation
+    if (role === 'USER' && userId && conversation.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Access denied: You can only access your own conversations.' });
+    }
+
+    res.json({ success: true, conversation });
+  } catch (err) {
+    console.error('❌ Error in GET /api/chat/conversations/:id:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/chat/conversations/:id/messages
+app.post('/api/chat/conversations/:id/messages', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { senderId, senderName, senderRole, message } = req.body;
+
+    if (!senderId || !message) {
+      return res.status(400).json({ success: false, error: 'senderId and message are required' });
+    }
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id }
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ success: false, error: 'Conversation not found' });
+    }
+
+    const role = (senderRole || 'USER').toUpperCase();
+
+    // SECURITY CHECK: User can only post to their own conversation
+    if (role === 'USER' && conversation.userId !== senderId) {
+      return res.status(403).json({ success: false, error: 'Access denied: You can only send messages in your own conversation.' });
+    }
+
+    const newMessage = await prisma.chatMessage.create({
+      data: {
+        conversationId: id,
+        senderId,
+        senderName: senderName || (role === 'ADMIN' ? 'Support Admin' : 'User'),
+        senderRole: role,
+        message
+      }
+    });
+
+    await prisma.conversation.update({
+      where: { id },
+      data: {
+        lastMessage: message,
+        lastMessageAt: new Date()
+      }
+    });
+
+    res.json({ success: true, message: newMessage });
+  } catch (err) {
+    console.error('❌ Error in POST /api/chat/conversations/:id/messages:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// PATCH /api/chat/conversations/:id/read
+app.patch('/api/chat/conversations/:id/read', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, role } = req.body;
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id }
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ success: false, error: 'Conversation not found' });
+    }
+
+    if (role === 'USER' && userId && conversation.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Access denied.' });
+    }
+
+    const oppositeRole = (role || '').toUpperCase() === 'ADMIN' ? 'USER' : 'ADMIN';
+
+    await prisma.chatMessage.updateMany({
+      where: {
+        conversationId: id,
+        senderRole: oppositeRole,
+        isRead: false
+      },
+      data: { isRead: true }
+    });
+
+    res.json({ success: true, message: 'Messages marked as read' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 Connected to PostgreSQL DB: offermatrix (28 active endpoints)`);
+  console.log(`📊 Connected to PostgreSQL DB: offermatrix (33 active endpoints)`);
 });

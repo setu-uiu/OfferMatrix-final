@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { OfferMatrixAPI } from '../services/api';
 import {
   Tag, Percent, Search, Bell, Calendar, ChevronDown, LayoutDashboard,
   Users, Store, Utensils, Car, Sparkles, Ticket, MessageSquare,
@@ -248,11 +249,40 @@ export default function AdminDashboard({
   obhaiOffers = [],
   setObhaiOffers,
   indriverOffers = [],
-  setIndriverOffers
+  setIndriverOffers,
+  dbUsers = [],
+  dbMerchants = [],
+  dbComplaints = [],
+  dbReviews = []
 }) {
   const [activeTab, setActiveTab] = useState('coupons');
   const [isFoodSubOpen, setIsFoodSubOpen] = useState(false);
   const [activeFoodSubTab, setActiveFoodSubTab] = useState('all');
+
+  // Live Complaints State
+  const [liveComplaints, setLiveComplaints] = useState([]);
+
+  const fetchAdminComplaints = async () => {
+    try {
+      const data = await OfferMatrixAPI.getComplaints();
+      if (Array.isArray(data)) {
+        setLiveComplaints(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch admin complaints:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdminComplaints();
+    const interval = setInterval(fetchAdminComplaints, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleResolveComplaint = (cmpId) => {
+    setLiveComplaints(prev => prev.map(c => c.id === cmpId ? { ...c, status: 'Resolved' } : c));
+    if (onToast) onToast(`Resolved Complaint Ticket #${cmpId}`);
+  };
 
   // Ride Submenu & Selected Platform State
   const [isRideSubOpen, setIsRideSubOpen] = useState(false);
@@ -279,6 +309,54 @@ export default function AdminDashboard({
   const [newUserStatus, setNewUserStatus] = useState('Active');
   const [isSendMessageModalOpen, setIsSendMessageModalOpen] = useState(false);
   const [userMessageContent, setUserMessageContent] = useState('');
+
+  // Admin Live Chat State (Persistent PostgreSQL)
+  const [adminConversations, setAdminConversations] = useState([]);
+  const [activeAdminConvId, setActiveAdminConvId] = useState(null);
+  const [adminChatInput, setAdminChatInput] = useState('');
+
+  const fetchAdminConversations = async () => {
+    try {
+      const res = await OfferMatrixAPI.getConversations({ role: 'ADMIN' });
+      if (res && res.success && Array.isArray(res.conversations)) {
+        setAdminConversations(res.conversations);
+        if (res.conversations.length > 0 && !activeAdminConvId) {
+          setActiveAdminConvId(res.conversations[0].id);
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not fetch admin conversations:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdminConversations();
+    const interval = setInterval(fetchAdminConversations, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleAdminSendReply = async () => {
+    if (!adminChatInput || !adminChatInput.trim() || !activeAdminConvId) return;
+
+    const messageText = adminChatInput.trim();
+    setAdminChatInput('');
+
+    try {
+      const res = await OfferMatrixAPI.sendChatMessage(activeAdminConvId, {
+        senderId: currentUser?.id || 'admin-usr-1',
+        senderName: currentUser?.name || 'Nusrat Jahan (Admin Officer)',
+        senderRole: 'ADMIN',
+        message: messageText
+      });
+
+      if (res && res.success) {
+        if (onToast) onToast('💬 Support reply sent to user!');
+        fetchAdminConversations();
+      }
+    } catch (err) {
+      if (onToast) onToast(`❌ Failed to send message: ${err.message}`);
+    }
+  };
 
   const handleAddNewUserSubmit = (e) => {
     e.preventDefault();
@@ -338,6 +416,74 @@ export default function AdminDashboard({
   const [complaintCategoryFilter, setComplaintCategoryFilter] = useState('all');
   const [complaintTierFilter, setComplaintTierFilter] = useState('all');
   const [complaintSearch, setComplaintSearch] = useState('');
+
+  const displayComplaints = React.useMemo(() => {
+    let mockDefault = [
+      {
+        id: '9042',
+        user: { name: 'Nusrat Jahan', email: 'nusrat.jahan@offermatrix.com', tier: 'PREMIUM' },
+        title: 'Expired promo code on foodpanda order',
+        details: 'Applied promo code FEAST20 but error popped up.',
+        category: 'Food',
+        target: 'foodpanda',
+        date: '15 Sep 2026',
+        status: 'In Progress'
+      },
+      {
+        id: '8812',
+        user: { name: 'Tanvir Rahman', email: 'tanvir.r@offermatrix.com', tier: 'STANDARD' },
+        title: 'Driver overcharged distance fare on Uber',
+        details: 'Driver asked for extra 100 BDT cash payment.',
+        category: 'Ride',
+        target: 'Uber BD',
+        date: '14 Sep 2026',
+        status: 'Resolved'
+      },
+      {
+        id: '7640',
+        user: { name: 'Samiha Islam', email: 'samiha.islam@offermatrix.com', tier: 'PREMIUM' },
+        title: 'Damaged serum box received from Choice Legacy',
+        details: 'Bottle arrived cracked with liquid leaked.',
+        category: 'Skincare',
+        target: 'Choice Legacy',
+        date: '13 Sep 2026',
+        status: 'Open'
+      }
+    ];
+
+    const activeDbList = liveComplaints.length > 0 ? liveComplaints : dbComplaints;
+    let list = activeDbList.length > 0 ? [...activeDbList, ...mockDefault] : mockDefault;
+
+    if (complaintCategoryFilter && complaintCategoryFilter !== 'all') {
+      list = list.filter(c => {
+        const cat = (c.category || c.subCategory || '').toLowerCase();
+        return cat.includes(complaintCategoryFilter);
+      });
+    }
+
+    if (complaintTierFilter && complaintTierFilter !== 'all') {
+      list = list.filter(c => {
+        const t = (c.user?.tier || '').toLowerCase();
+        if (complaintTierFilter === 'premium') return t === 'premium' || t.includes('star');
+        if (complaintTierFilter === 'standard') return t !== 'premium';
+        return true;
+      });
+    }
+
+    if (complaintSearch && complaintSearch.trim()) {
+      const q = complaintSearch.toLowerCase();
+      list = list.filter(c =>
+        (c.title && c.title.toLowerCase().includes(q)) ||
+        (c.details && c.details.toLowerCase().includes(q)) ||
+        (c.desc && c.desc.toLowerCase().includes(q)) ||
+        (c.user?.name && c.user.name.toLowerCase().includes(q)) ||
+        (c.user?.email && c.user.email.toLowerCase().includes(q)) ||
+        (c.target && c.target.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  }, [dbComplaints, complaintCategoryFilter, complaintTierFilter, complaintSearch]);
 
   const [reviewRatingFilter, setReviewRatingFilter] = useState('all');
   const [reviewTierFilter, setReviewTierFilter] = useState('all');
@@ -1079,6 +1225,15 @@ export default function AdminDashboard({
             </li>
 
             <li
+              className={`admin-menu-item ${activeTab === 'live_chat' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('live_chat'); onToast('Opened Live User Chat Support'); }}
+            >
+              <Send size={18} />
+              <span>Live User Chat</span>
+              <span className="admin-badge-red" style={{ background: '#3b82f6' }}>{adminConversations.length}</span>
+            </li>
+
+            <li
               className={`admin-menu-item ${activeTab === 'reviews' ? 'active' : ''}`}
               onClick={() => { setActiveTab('reviews'); onToast('Opened Reviews & Feedback'); }}
             >
@@ -1144,7 +1299,7 @@ export default function AdminDashboard({
              ========================================================= */}
           {activeTab === 'users' ? (
             <div className="users-management-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px', color: '#ffffff' }}>
-              
+
               {/* Header Title & Add New User Button */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
@@ -1239,7 +1394,7 @@ export default function AdminDashboard({
 
                   {/* Filter Bar */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                    
+
                     {/* Status Tabs */}
                     <div style={{ display: 'flex', gap: '4px', backgroundColor: '#0f172a', padding: '4px', borderRadius: '8px', border: '1px solid #1e293b' }}>
                       <button
@@ -1380,8 +1535,8 @@ export default function AdminDashboard({
                           .filter(u => {
                             const matchesTab = userFilterTab === 'all' ? true :
                               userFilterTab === 'active' ? u.status === 'Active' :
-                              userFilterTab === 'suspended' ? u.status === 'Suspended' :
-                              userFilterTab === 'reported' ? u.status === 'Reported' : true;
+                                userFilterTab === 'suspended' ? u.status === 'Suspended' :
+                                  userFilterTab === 'reported' ? u.status === 'Reported' : true;
                             const matchesSearch = u.name.toLowerCase().includes(userSearchText.toLowerCase()) ||
                               u.email.toLowerCase().includes(userSearchText.toLowerCase()) ||
                               u.phone.toLowerCase().includes(userSearchText.toLowerCase());
@@ -1550,7 +1705,7 @@ export default function AdminDashboard({
                 {/* Right Side Panel: User Details */}
                 {showUserDetails && selectedUser && (
                   <div style={{ width: '330px', backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                    
+
                     {/* Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: '#ffffff' }}>User Details</h3>
@@ -5159,6 +5314,203 @@ export default function AdminDashboard({
                 </>
               )}
             </div>
+          ) : activeTab === 'live_chat' ? (
+            /* =========================================================
+               LIVE USER CHAT SUPPORT PAGE VIEW (ADMIN ↔ USER MESSAGING)
+               ========================================================= */
+            <div className="users-page-container animate-fade-in">
+              <div className="users-header-row">
+                <div>
+                  <div className="users-breadcrumb">
+                    <span>Dashboard</span> &gt; <span className="active-crumb">Live User Chat</span>
+                  </div>
+                  <h1 className="users-main-title">Admin ↔ User Support Messaging</h1>
+                  <p className="users-main-sub">
+                    Real-time persistent support conversations synced with PostgreSQL database.
+                  </p>
+                </div>
+              </div>
+
+              {/* CHAT WORKSPACE (2-COLUMN GRID) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '20px', minHeight: '580px', background: '#0f172a', borderRadius: '16px', border: '1px solid #1e293b', overflow: 'hidden', color: '#f8fafc' }}>
+
+                {/* LEFT COL: CONVERSATIONS LIST */}
+                <div style={{ borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', background: '#020617' }}>
+                  <div style={{ padding: '16px', borderBottom: '1px solid #1e293b', fontSize: '13px', fontWeight: 800, color: '#ff2b70', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Active User Chats ({adminConversations.length})</span>
+                    <button onClick={fetchAdminConversations} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }} title="Refresh">🔄</button>
+                  </div>
+                  <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {adminConversations.length === 0 ? (
+                      <div style={{ padding: '20px', fontSize: '12px', color: '#64748b', textAlign: 'center' }}>
+                        No active support chats found in PostgreSQL.
+                      </div>
+                    ) : (
+                      adminConversations.map(conv => {
+                        const isSelected = activeAdminConvId === conv.id;
+                        const userObj = conv.user || {};
+                        const unreadCount = (conv.messages || []).filter(m => m.senderRole === 'USER' && !m.isRead).length;
+
+                        return (
+                          <div
+                            key={conv.id}
+                            onClick={() => {
+                              setActiveAdminConvId(conv.id);
+                              OfferMatrixAPI.markChatMessagesRead(conv.id, { role: 'ADMIN' });
+                            }}
+                            style={{
+                              padding: '14px 16px',
+                              borderBottom: '1px solid #1e293b',
+                              background: isSelected ? '#1e293b' : 'transparent',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              display: 'flex',
+                              gap: '12px',
+                              alignItems: 'center'
+                            }}
+                          >
+                            <img
+                              src={userObj.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80"}
+                              alt={userObj.name || 'User'}
+                              style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <strong style={{ fontSize: '13px', color: isSelected ? '#ff2b70' : '#f8fafc', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                  {userObj.name || 'User Account'}
+                                </strong>
+                                {unreadCount > 0 && (
+                                  <span style={{ background: '#ef4444', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '1px 6px', borderRadius: '99px' }}>
+                                    {unreadCount}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#94a3b8', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                                {conv.lastMessage || 'No messages'}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* RIGHT COL: ACTIVE CHAT THREAD */}
+                {(() => {
+                  const currentConv = adminConversations.find(c => c.id === activeAdminConvId) || adminConversations[0];
+                  const userObj = currentConv?.user || {};
+                  const messagesList = currentConv?.messages || [];
+
+                  if (!currentConv) {
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '13px' }}>
+                        Select a user conversation to start messaging.
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      {/* Thread Header */}
+                      <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e293b', background: '#020617', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <img
+                          src={userObj.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80"}
+                          alt={userObj.name || 'User'}
+                          style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                        <div>
+                          <div style={{ fontSize: '14px', fontWeight: 900, color: '#f8fafc' }}>
+                            {userObj.name || 'User Account'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+                            ✉️ {userObj.email || 'user@offermatrix.com'} • 💬 PostgreSQL Conv #{currentConv.id.substring(0, 8)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Messages Thread List */}
+                      <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', background: '#0b1329' }}>
+                        {messagesList.length === 0 ? (
+                          <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', marginTop: '40px' }}>
+                            No messages in this conversation yet.
+                          </div>
+                        ) : (
+                          messagesList.map(msg => {
+                            const isAdminMsg = msg.senderRole === 'ADMIN';
+                            return (
+                              <div
+                                key={msg.id}
+                                style={{
+                                  alignSelf: isAdminMsg ? 'flex-end' : 'flex-start',
+                                  maxWidth: '70%',
+                                  background: isAdminMsg ? '#ff2b70' : '#1e293b',
+                                  color: '#ffffff',
+                                  padding: '10px 14px',
+                                  borderRadius: isAdminMsg ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
+                                  fontSize: '12.5px',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                                }}
+                              >
+                                <div style={{ fontSize: '10px', opacity: 0.8, marginBottom: '4px', fontWeight: 700 }}>
+                                  {isAdminMsg ? '👑 Support Admin' : (msg.senderName || userObj.name || 'User')}
+                                </div>
+                                <div>{msg.message}</div>
+                                <div style={{ fontSize: '9.5px', opacity: 0.6, marginTop: '4px', textAlign: 'right' }}>
+                                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* Input Footer */}
+                      <form
+                        onSubmit={(e) => { e.preventDefault(); handleAdminSendReply(); }}
+                        style={{ padding: '14px 20px', borderTop: '1px solid #1e293b', background: '#020617', display: 'flex', gap: '10px' }}
+                      >
+                        <input
+                          type="text"
+                          placeholder={`Reply to ${userObj.name || 'User'}...`}
+                          value={adminChatInput}
+                          onChange={(e) => setAdminChatInput(e.target.value)}
+                          style={{
+                            flex: 1,
+                            background: '#1e293b',
+                            border: '1px solid #334155',
+                            borderRadius: '10px',
+                            padding: '10px 14px',
+                            color: '#ffffff',
+                            fontSize: '12px',
+                            outline: 'none'
+                          }}
+                        />
+                        <button
+                          type="submit"
+                          style={{
+                            padding: '10px 20px',
+                            background: '#ff2b70',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '10px',
+                            fontWeight: 800,
+                            fontSize: '12.5px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <Send size={15} />
+                          <span>Send</span>
+                        </button>
+                      </form>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
           ) : activeTab === 'reviews' ? (
 
             /* =========================================================
@@ -6713,7 +7065,7 @@ export default function AdminDashboard({
                 <X size={18} />
               </button>
             </div>
-            
+
             <form onSubmit={handleAddNewUserSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Full Name *</label>
@@ -6812,7 +7164,7 @@ export default function AdminDashboard({
                 <X size={18} />
               </button>
             </div>
-            
+
             <form onSubmit={handleSendMessageSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#cbd5e1', marginBottom: '6px' }}>Message Body</label>

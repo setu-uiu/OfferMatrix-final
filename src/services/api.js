@@ -84,6 +84,24 @@ export const OfferMatrixAPI = {
   getRideById: (id) => fetchJson(`/rides/${id}`),
   createRide: (rideData) => fetchJson('/rides', { method: 'POST', body: JSON.stringify(rideData) }),
   assignDriverToRide: (id, driverData) => fetchJson(`/rides/${id}/assign-driver`, { method: 'POST', body: JSON.stringify(driverData || {}) }),
-  updateRideStatus: (id, status) => fetchJson(`/rides/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) })
+  updateRideStatus: (id, status) => fetchJson(`/rides/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) }),
+
+  // ADMIN ↔ USER Chat API
+  getConversations: (params = {}) => {
+    const q = new URLSearchParams();
+    if (params.userId) q.append('userId', params.userId);
+    if (params.role) q.append('role', params.role);
+    if (params.orderId) q.append('orderId', params.orderId);
+    return fetchJson(`/chat/conversations?${q.toString()}`);
+  },
+  getConversationById: (id, params = {}) => {
+    const q = new URLSearchParams();
+    if (params.userId) q.append('userId', params.userId);
+    if (params.role) q.append('role', params.role);
+    return fetchJson(`/chat/conversations/${id}?${q.toString()}`);
+  },
+  createConversation: (data) => fetchJson('/chat/conversations', { method: 'POST', body: JSON.stringify(data) }),
+  sendChatMessage: (conversationId, data) => fetchJson(`/chat/conversations/${conversationId}/messages`, { method: 'POST', body: JSON.stringify(data) }),
+  markChatMessagesRead: (conversationId, data) => fetchJson(`/chat/conversations/${conversationId}/read`, { method: 'PATCH', body: JSON.stringify(data || {}) })
 };
 

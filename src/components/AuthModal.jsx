@@ -874,214 +874,214 @@ export default function AuthModal({ onClose, onToast, onLoginSuccess, initialSig
                   title="Assign Delivery Partner"
                   onClick={() => setShowDeliveryManagement(true)}
                 />
-              <div className="explore-float-purple-tag">%</div>
-              <div className="explore-float-car">🚗</div>
-              <div className="explore-float-leaves">🌿</div>
+                <div className="explore-float-purple-tag">%</div>
+                <div className="explore-float-car">🚗</div>
+                <div className="explore-float-leaves">🌿</div>
 
-              {/* Explore Section Headline */}
-              <div className="explore-header-section">
-                <h1 className="explore-main-title">
-                  What do you want to <span className="explore-gradient-text">explore?</span>
-                </h1>
-                <p className="explore-subtitle">
-                  Compare, save and get the best deals across Food, Ride &amp; Skincare.
-                </p>
+                {/* Explore Section Headline */}
+                <div className="explore-header-section">
+                  <h1 className="explore-main-title">
+                    What do you want to <span className="explore-gradient-text">explore?</span>
+                  </h1>
+                  <p className="explore-subtitle">
+                    Compare, save and get the best deals across Food, Ride &amp; Skincare.
+                  </p>
 
-                <div className="explore-dots-bar">
-                  <span className="dot-pill dot-pink-pill"></span>
-                  <span className="dot-pill dot-green-pill"></span>
-                  <span className="dot-pill dot-blue-pill"></span>
+                  <div className="explore-dots-bar">
+                    <span className="dot-pill dot-pink-pill"></span>
+                    <span className="dot-pill dot-green-pill"></span>
+                    <span className="dot-pill dot-blue-pill"></span>
+                  </div>
                 </div>
-              </div>
 
-              {/* 3 Explore Cards Grid */}
-              <div className="explore-cards-grid">
-                {/* FOOD CARD */}
-                <div
-                  className="explore-card food-card"
-                  onMouseEnter={() => setHoveredExploreCard('food')}
-                  onMouseLeave={() => setHoveredExploreCard(null)}
-                  onClick={() => setFoodSubStep(true)}
-                >
-                  <div className="explore-card-img-wrap">
-                    <img
-                      src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80"
-                      alt="Food Deals"
-                      className="explore-card-real-img"
-                      onError={(e) => { e.target.onerror = null; e.target.src = '/assets/biryani.jpg'; }}
-                    />
+                {/* 3 Explore Cards Grid */}
+                <div className="explore-cards-grid">
+                  {/* FOOD CARD */}
+                  <div
+                    className="explore-card food-card"
+                    onMouseEnter={() => setHoveredExploreCard('food')}
+                    onMouseLeave={() => setHoveredExploreCard(null)}
+                    onClick={() => setFoodSubStep(true)}
+                  >
+                    <div className="explore-card-img-wrap">
+                      <img
+                        src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80"
+                        alt="Food Deals"
+                        className="explore-card-real-img"
+                        onError={(e) => { e.target.onerror = null; e.target.src = '/assets/biryani.jpg'; }}
+                      />
+                    </div>
+
+                    <h3 className="explore-card-title food-title">Food</h3>
+                    <p className="explore-card-desc">
+                      Compare best food deals from Foodpanda, Foodi, Pathao &amp; more
+                    </p>
+                    <button type="button" className="explore-card-arrow-btn food-btn">
+                      <ArrowRight size={18} />
+                    </button>
+
+                    {/* HOVER POPUP FOR FOOD */}
+                    {hoveredExploreCard === 'food' && (
+                      <div className="explore-hover-popup popup-food" onClick={(e) => e.stopPropagation()}>
+                        <div className="popup-header">
+                          <div className="popup-badge bg-pink">🍔 Food Deals</div>
+                          <span className="popup-status">🟢 4 Partners Active</span>
+                        </div>
+                        <ul className="popup-offers-list">
+                          <li>
+                            <strong>Foodpanda:</strong> Up to 50% OFF BOGO Meals &amp; Free Delivery
+                          </li>
+                          <li>
+                            <strong>Foodi:</strong> Flat ৳100 Cashback with <code>SAVE100</code>
+                          </li>
+                          <li>
+                            <strong>Pathao Food:</strong> 30% OFF on top restaurants
+                          </li>
+                          <li>
+                            <strong>KFC &amp; Burger King:</strong> Combos from ৳199
+                          </li>
+                        </ul>
+                        <button
+                          type="button"
+                          className="popup-cta-btn btn-food"
+                          onClick={() => {
+                            if (onSelectCategory) onSelectCategory('food');
+                            onClose();
+                          }}
+                        >
+                          Explore Food Deals →
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  <h3 className="explore-card-title food-title">Food</h3>
-                  <p className="explore-card-desc">
-                    Compare best food deals from Foodpanda, Foodi, Pathao &amp; more
-                  </p>
-                  <button type="button" className="explore-card-arrow-btn food-btn">
-                    <ArrowRight size={18} />
-                  </button>
-
-                  {/* HOVER POPUP FOR FOOD */}
-                  {hoveredExploreCard === 'food' && (
-                    <div className="explore-hover-popup popup-food" onClick={(e) => e.stopPropagation()}>
-                      <div className="popup-header">
-                        <div className="popup-badge bg-pink">🍔 Food Deals</div>
-                        <span className="popup-status">🟢 4 Partners Active</span>
-                      </div>
-                      <ul className="popup-offers-list">
-                        <li>
-                          <strong>Foodpanda:</strong> Up to 50% OFF BOGO Meals &amp; Free Delivery
-                        </li>
-                        <li>
-                          <strong>Foodi:</strong> Flat ৳100 Cashback with <code>SAVE100</code>
-                        </li>
-                        <li>
-                          <strong>Pathao Food:</strong> 30% OFF on top restaurants
-                        </li>
-                        <li>
-                          <strong>KFC &amp; Burger King:</strong> Combos from ৳199
-                        </li>
-                      </ul>
-                      <button
-                        type="button"
-                        className="popup-cta-btn btn-food"
-                        onClick={() => {
-                          if (onSelectCategory) onSelectCategory('food');
-                          onClose();
-                        }}
-                      >
-                        Explore Food Deals →
-                      </button>
+                  {/* RIDE CARD */}
+                  <div
+                    className="explore-card ride-card"
+                    onMouseEnter={() => setHoveredExploreCard('ride')}
+                    onMouseLeave={() => setHoveredExploreCard(null)}
+                    onClick={() => setRideSubStep(true)}
+                  >
+                    <div className="explore-card-img-wrap">
+                      <img
+                        src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80"
+                        alt="Ride Fares"
+                        className="explore-card-real-img"
+                        onError={(e) => { e.target.onerror = null; e.target.src = '/assets/blue_car.jpg'; }}
+                      />
                     </div>
-                  )}
-                </div>
 
-                {/* RIDE CARD */}
-                <div
-                  className="explore-card ride-card"
-                  onMouseEnter={() => setHoveredExploreCard('ride')}
-                  onMouseLeave={() => setHoveredExploreCard(null)}
-                  onClick={() => setRideSubStep(true)}
-                >
-                  <div className="explore-card-img-wrap">
-                    <img
-                      src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80"
-                      alt="Ride Fares"
-                      className="explore-card-real-img"
-                      onError={(e) => { e.target.onerror = null; e.target.src = '/assets/blue_car.jpg'; }}
-                    />
+                    <h3 className="explore-card-title ride-title">Ride</h3>
+                    <p className="explore-card-desc">
+                      Find the best ride fares from Uber, Obhai, inDrive &amp; more
+                    </p>
+                    <button type="button" className="explore-card-arrow-btn ride-btn">
+                      <ArrowRight size={18} />
+                    </button>
+
+                    {/* HOVER POPUP FOR RIDE */}
+                    {hoveredExploreCard === 'ride' && (
+                      <div className="explore-hover-popup popup-ride" onClick={(e) => e.stopPropagation()}>
+                        <div className="popup-header">
+                          <div className="popup-badge bg-blue">🚗 Ride Fares</div>
+                          <span className="popup-status">🟢 Lowest Fare Guarantee</span>
+                        </div>
+                        <ul className="popup-offers-list">
+                          <li>
+                            <strong>Uber:</strong> Save up to 25% on UberX &amp; Intercity
+                          </li>
+                          <li>
+                            <strong>Pathao Rides:</strong> 15% Instant Discount on Bike rides
+                          </li>
+                          <li>
+                            <strong>inDrive:</strong> Bargain best fares across town
+                          </li>
+                          <li>
+                            <strong>Obhai:</strong> Flat ৳50 OFF CNG &amp; Car bookings
+                          </li>
+                        </ul>
+                        <button
+                          type="button"
+                          className="popup-cta-btn btn-ride"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRideSubStep(true);
+                          }}
+                        >
+                          Compare Ride Fares →
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  <h3 className="explore-card-title ride-title">Ride</h3>
-                  <p className="explore-card-desc">
-                    Find the best ride fares from Uber, Obhai, inDrive &amp; more
-                  </p>
-                  <button type="button" className="explore-card-arrow-btn ride-btn">
-                    <ArrowRight size={18} />
-                  </button>
-
-                  {/* HOVER POPUP FOR RIDE */}
-                  {hoveredExploreCard === 'ride' && (
-                    <div className="explore-hover-popup popup-ride" onClick={(e) => e.stopPropagation()}>
-                      <div className="popup-header">
-                        <div className="popup-badge bg-blue">🚗 Ride Fares</div>
-                        <span className="popup-status">🟢 Lowest Fare Guarantee</span>
-                      </div>
-                      <ul className="popup-offers-list">
-                        <li>
-                          <strong>Uber:</strong> Save up to 25% on UberX &amp; Intercity
-                        </li>
-                        <li>
-                          <strong>Pathao Rides:</strong> 15% Instant Discount on Bike rides
-                        </li>
-                        <li>
-                          <strong>inDrive:</strong> Bargain best fares across town
-                        </li>
-                        <li>
-                          <strong>Obhai:</strong> Flat ৳50 OFF CNG &amp; Car bookings
-                        </li>
-                      </ul>
-                      <button
-                        type="button"
-                        className="popup-cta-btn btn-ride"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRideSubStep(true);
-                        }}
-                      >
-                        Compare Ride Fares →
-                      </button>
+                  {/* SKINCARE CARD */}
+                  <div
+                    className="explore-card skincare-card"
+                    onMouseEnter={() => setHoveredExploreCard('skincare')}
+                    onMouseLeave={() => setHoveredExploreCard(null)}
+                    onClick={() => setSkincareSubStep(true)}
+                  >
+                    <div className="explore-card-img-wrap">
+                      <img
+                        src="https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80"
+                        alt="Skincare Offers"
+                        className="explore-card-real-img"
+                        onError={(e) => { e.target.onerror = null; e.target.src = '/assets/skincare.jpg'; }}
+                      />
                     </div>
-                  )}
-                </div>
 
-                {/* SKINCARE CARD */}
-                <div
-                  className="explore-card skincare-card"
-                  onMouseEnter={() => setHoveredExploreCard('skincare')}
-                  onMouseLeave={() => setHoveredExploreCard(null)}
-                  onClick={() => setSkincareSubStep(true)}
-                >
-                  <div className="explore-card-img-wrap">
-                    <img
-                      src="https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80"
-                      alt="Skincare Offers"
-                      className="explore-card-real-img"
-                      onError={(e) => { e.target.onerror = null; e.target.src = '/assets/skincare.jpg'; }}
-                    />
+                    <h3 className="explore-card-title skincare-title">Skincare</h3>
+                    <p className="explore-card-desc">
+                      Compare skincare deals from Choice Legacy, Kirei, Makeup Chari &amp; more
+                    </p>
+                    <button type="button" className="explore-card-arrow-btn skincare-btn">
+                      <ArrowRight size={18} />
+                    </button>
+
+                    {/* HOVER POPUP FOR SKINCARE */}
+                    {hoveredExploreCard === 'skincare' && (
+                      <div className="explore-hover-popup popup-skincare" onClick={(e) => e.stopPropagation()}>
+                        <div className="popup-header">
+                          <div className="popup-badge bg-amber">🧴 Skincare Offers</div>
+                          <span className="popup-status">🟢 100% Authentic Brands</span>
+                        </div>
+                        <ul className="popup-offers-list">
+                          <li>
+                            <strong>Choice Legacy:</strong> Buy 1 Get 1 Free on Cleansers
+                          </li>
+                          <li>
+                            <strong>Kirei:</strong> 20% OFF Sunscreens, Serums &amp; Cleansers
+                          </li>
+                          <li>
+                            <strong>Makeup Chari:</strong> Extra 10% OFF Korean Skincare
+                          </li>
+                          <li>
+                            <strong>The Mall:</strong> Free Shipping on orders over ৳1,000
+                          </li>
+                        </ul>
+                        <button
+                          type="button"
+                          className="popup-cta-btn btn-skincare"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSkincareSubStep(true);
+                          }}
+                        >
+                          Explore Skincare Deals →
+                        </button>
+                      </div>
+                    )}
                   </div>
+                </div>
 
-                  <h3 className="explore-card-title skincare-title">Skincare</h3>
-                  <p className="explore-card-desc">
-                    Compare skincare deals from Choice Legacy, Kirei, Makeup Chari &amp; more
-                  </p>
-                  <button type="button" className="explore-card-arrow-btn skincare-btn">
-                    <ArrowRight size={18} />
-                  </button>
-
-                  {/* HOVER POPUP FOR SKINCARE */}
-                  {hoveredExploreCard === 'skincare' && (
-                    <div className="explore-hover-popup popup-skincare" onClick={(e) => e.stopPropagation()}>
-                      <div className="popup-header">
-                        <div className="popup-badge bg-amber">🧴 Skincare Offers</div>
-                        <span className="popup-status">🟢 100% Authentic Brands</span>
-                      </div>
-                      <ul className="popup-offers-list">
-                        <li>
-                          <strong>Choice Legacy:</strong> Buy 1 Get 1 Free on Cleansers
-                        </li>
-                        <li>
-                          <strong>Kirei:</strong> 20% OFF Sunscreens, Serums &amp; Cleansers
-                        </li>
-                        <li>
-                          <strong>Makeup Chari:</strong> Extra 10% OFF Korean Skincare
-                        </li>
-                        <li>
-                          <strong>The Mall:</strong> Free Shipping on orders over ৳1,000
-                        </li>
-                      </ul>
-                      <button
-                        type="button"
-                        className="popup-cta-btn btn-skincare"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSkincareSubStep(true);
-                        }}
-                      >
-                        Explore Skincare Deals →
-                      </button>
-                    </div>
-                  )}
+                {/* Footer Cursive Banner */}
+                <div className="explore-footer-cursive">
+                  Save More, Live Better <span className="heart-pink">♡</span>
                 </div>
               </div>
-
-              {/* Footer Cursive Banner */}
-              <div className="explore-footer-cursive">
-                Save More, Live Better <span className="heart-pink">♡</span>
-              </div>
-            </div>
+            )
           )
-        )
-      ) : (
+        ) : (
           <div className="auth-modal-body">
             {/* Left Panel: Branding */}
             <div className="auth-left-panel">
